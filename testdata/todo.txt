@@ -1,0 +1,1897 @@
+// HIBA
+//  01a a szinkron után kell elindítani a listenert, (nincs hw lista a hw info lapon, pedig a szinkron lehozta)
+//  01b az előkészítés lapon az öltöztető ábra pucér maradt
+
+// EGYÉB FONTOS
+//  01zs0 mivel a gauge control nem látszódik, a maradékot nem jól osztja fel, és így az egérkattintás koordinátái is félremennek
+// - használható így, de kellemetlen és látványos az eltérés
+// todo 01zs1 ha a navigációs kontrol a kalibrációbra mutat és a _calibrationPage.CurrentCalibrationPropertiesChanged == true akkor ne lehessen csak úgy elmenni onnan de amúgy engedje
+//  01zs2 bal térdre pontfelhő lacinál -> pesti szerveren az SQL <- bokára most megvan
+//  01zs3 mivel a vizsgálatokhoz biztonsági okokból nincsen beállító felület, ezt sql-ből a pesti szerveren meg kell tenni kell hogy legyenek vizsgálatok de kell hibaüzenet is, ha nem jött le egy sem
+// vagy ha nem hoztunk létre egyet sem -> azért egy belső toolt lehetne írni a létrehozásra ami beledolgozik a pesti adatbázisba, a többi már csak szinkiron kérdése
+// todo 01zs4 általában a lapokra való navigálás előtt validálni kellene, hogy a szükséges adatok megvannak-e
+// todo 01zs5 login - ha nincsenek roleok, nem jó, ha a konfig file nem jó, akkor adjon értelmezhető hibaüzenetet és ne akadjon ki
+
+
+// 10 2021.06.11, 16 találkozó konklúziói
+
+// 10a : memória 32G tesztelni és hűtés
+// Vizsgálat betöltés néha nem tölti be az összes kamerát, de ha igen, nem biztos hogy az összes adatot - pl talp esetén volt ilyen
+// kilép-belép megoldja - miért nem mindíg rossz? - elfogyó memória????
+// Lejátszás közben megakad néha - vagy a gc vagy háttérfolyamat vagy a 16ms időzítő nem pontos ->
+// az alkalmazásnak a play thread priority értékét magasra kell tenni - ilyen nincs a .net core-ban, mert az core
+// összefügg a todo 90a
+// ventillátor felpörög képek beakadnak - melegszik is - videókártya, vagy processzor?
+// felpörgött teszt közben a venti a lejátszáskor és ezzel a jelátszás elkezdett szaggatni
+// a marker + és - gomb nyomkodására elszáll, de nem a program hanem a windows, valszeg a telerikes chart nem kezeki a marker minuszt-t ha nincs még marker létrehozva
+// memória elfogyáshoz kötném, de ez csak megérzés
+
+// 15 az oldalsó sárga panel - nem elég feltünően hozza a részletes adatokat - keretbe, háttérbe olvad?
+
+// 15 a kalibráció közben egy idő után valami szaggat, mintha valami timeoutolgatna
+// 15a felvétel után a kamerákat kezelő szál valamit még kommunikál -  nem vagyok biztos benne, hogy a program megszünteti a rengeteg szálat amit létrehoz
+
+// 16 tovább gomb - LEVENNI
+
+// 16a UPDATE gomb: csak akkor legyen látható, ha jött update
+// c:\mastergait\mastermove\MasterMove.Program\Pages\HardwareInfoPage.xaml.cs
+// HardwareUpgradeButton
+
+// TODO 99zs friendly color - itt kellene a korrekció - illetve lehet hogy nem, több terv is van
+// az egyik az, hogy a bőr akkor piros, ha túlszarturált - a szaturációt kezelni, a beállítását automatizálni kell
+
+// 17 a folyamatnál látszódjon, hogy hanyasnál tartunk, előtte miket teljesítettünk és mi van még hátra
+
+// 18 az előkészítés színek - a kamera ad visszafele színt, és ezt el kell vinni a zadatbázisba a bodypointba színnek - bár itt az fáj, hogy egy bodypointnak olyan színe van, amit egy
+// adott kalibrációban kap, azaz az a kalibráció esetén zöld, b esetén meg piros, tehát a pbá-nek nincs színe  - az öltöztető ábrán a golyók részben tehát kalibrációtól függenek
+
+// 18a kalibráció - settings ablak -> átmérő default 0.02-0.07 - oldalról 0.09 mert közelebb van illetve a két nézetben különböző a kamerától való távolság miatt
+
+// 18aa kalibráció során az egér egyes gombjainak sajátos funkciói vannak (keret és szín "üzemmód"), ami elég szerencsétlenül jön ki, mert nem mutatja semmi hogy mit és hogy kell csinálni a kalibrációhoz
+// ehez képest jó lenne radio button az egyes üzemmódokhoz, ikonnal, a keret, a szín, és a ki tudja a jövőben micsoda üzemmódokhoz
+
+// 18b egyes kalibrációkkal végzett műveletek: másolás golyóból golyóba, vagy össemásolás???
+
+// 18c a színátmenetekben nem látszik a szám - lehetne default szín - de itt számít a kamerából jövő szín - és annak lenne ez az ellentéte
+
+// 18d ha színt kalibrálunk, akkor a talált pontok számát (és akár a keretszínt is állítsuk be automatikusan komplementer színt)
+
+// 18e a gauge control ne látszódjon - felesleges meg a másik oldalon van zöld és %
+//todo 23 telerik chart lecserélése
+
+// 10 2021.07.13 találkozó
+// készült 3 videó
+// https://drive.google.com/file/d/16t-2Aqp2o20whVsKxq_X68wYpAmldJzZ/view?usp=sharing,
+// https://drive.google.com/file/d/1K_e_L0t_rXUgIUKF2jPAEmS9TZHlaaSo/view?usp=sharing,
+// https://drive.google.com/file/d/1NokyssEJNr4lXG9AfzggRNF3lwmAfbt-/view?usp=sharing,
+// https://drive.google.com/file/d/1vrtYYMBlwZsZOKtuKve1eqGkBdVwHAYC/view?usp=sharing
+
+// 30 logo, témák, web->ügyfél logo
+
+
+// todo 37 boka: 1.lépéshossz, 2.magasság
+
+// 24 ha egy beteggel készítek több felvételt, nem tudom a beteg alapján elérni ezeket - ez teszt eset, hogy többet is készítek - sőt:
+// 24a ha nem írok a felvételhez diagnózistt, sehogyan sem tudom elérni többé
+
+// nem az utolsó felvételt tölti vissza, ahnem az utolsó diagnózis mentés felvételt - így a megszakadt munkát nem lehet folytatni
+// felvétel: lehessen választani /utolsó idő szerint /per szervezet /per (ez a)vizsgáló /per doki / per ügyfél
+// a szervezetet meg a dokit valszeg csak felsőbb szinteken kell tudni, itt az egy beteg előzményei, meg a munkahelyen a rendelés folytatása szerintem a cél
+// utolsó felvételt nem lehet lejátszani, nincs hozzá exam - tulajdonképpen az exam entitást lehet lejátszani, nem a rögzített adatot
+// itt lehetne egy exam, és az adatokat hozzá rendeljük és lehetne egy flag, hogy teljesen befejezett vagy csak éppen felvett
+
+// 38 frissítés szolgáltatás élesítése
+
+// hátrasorolva
+// 46 görbék offsetje - lejátszási offsetek kidolgozása - az felvételek szinkron indításával ez valószínűleg megoldódott
+// a felvételt szinkronban kell indítani mindenkppen szinkronban kell tartan
+// a hw-ek órájának NTP-vel való szinkronizálása extra nehézséggel jár, így az nem használható
+// ami viszont igen, azzal a felvétel is szinkron elindítható  + kell majd a szinkron startba időbélyeg
+
+// 38 A Beteg lapon a jobb oldalon ha egy adat nincs megadva, ne legyen a mező sem a mezőnév felsorolva sem 'Nincs megadva' adattartalommal
+
+// jövőkép
+//todo 98 a pontsor j-b összehasonlítható legyen, pl. a jobb az alap, rátülrözve a b-t ahol eltér, ott piruljon be - ezt talán külön lapon lenne érdekes
+//todo 99 utólagos mérések-számítások a videó pillanatképén
+//todo 99 trapézpöttyök átgondolása - a futópad síkját meg kellene jelölni, hogy a megfelelő kalibráció (együtthatók számítása) elvégzése után
+// a futópad síkjában pozíciót (méreteket) lehessen meghatározni
+// kalibrációs együtthatók gyártás során felhőbe->majd az ügyfélhez? kalibráció az ügyfélnél?
+//todo 99 LIDAR mérés a hátsó kamerában - a gerinc vonalának a mérésére
+// Intel lidar a hátról egy kép és megmutatás
+// 99 hardver flekkek áttervezése grafikusan - vázlat a táblán
+
+// todo 99b camera3
+// - alive-re épülő állapot, illetve azok változásainak áttükrözésa a kliensre
+// ok - tcp és udp parancs csatorna - megoldani hogy a fellépő státuszváltozás a túloldalt látszódjon
+// - bináris kommunikáció - struntúrák?, endian,? képek binárisan, metaadat nem beágyazva, nem csak jpg formátum
+// program, libek külön NEM! EGYBE!
+// a kártya particionálása -> külön partíción legyen a rendszer és külön a program - és azok komponensei - így egyszerűbb és átláthatóbb pl a frissítés is
+// ok - friendly colors - unfriendly colors: komoly megkötés: színkerék!
+// ok a kalibráció 1 szín megadását jelenti, ezt "normalizáljuk" DE A KAMERÁT ÁLLÍTJUK BE AUTO
+// ok  minden színre tudunk friendly colort számolni a színkerék színeire vonatkoztatva, így a kamera szoftvere pont jó, pont azt ttudja amit kell, csak más módszerrel lesz meg az fc tábla
+// ok unfriendly color: a friendly colorból "kivonva" a jelen apparátus pont jól kezeli
+// ok komoly megkötés: a kék és a farmer kék innentől kezdve szabvány kék lesz, nem lesz használható, olyan színeket kell használni ami ruhán nincs, pl sárga, piros, neonzöld
+// futás közben a boka feljön, ez a színeknél majd baj lesz - a térd színeivel találkozhat illetzve a térd a csípővel találkozhat szintén !!!
+// a fentit egy szigorúbb vizsgálat megoldja
+
+// teszt 2021.11.19
+// 11 kalibráció: fordítva rajzolt téglalapot eldobja, helyette egy függőleges vonal lesz az eredmény
+// ha egy golyó nincs bekapcsolva és küldünk bele adatot, előtte kapcsoljuk be!
+// 11e hova lett a yellow????
+// mivel az fcst kétfele menti, az egyik a marker bogyó a lista elején, a másik meg a fcs colors tábla, és ha nem nyomok pipát, akkor a marker színét megjegyzi de nem ment a táblába be.
+// amúgy ezt a kettősséget is ki lehetne irtani,
+// most a  marker colort elég kikapcsolni, ha üres a tábla
+//  nem jól töröl, mintha nem várná meg, hogy lett-e eredménye
+// 0;5.4;18;166;385;159;56;true;false;WC_BodyPoint.LeftKnee;fcs=0 invalid,no_fcs
+// 0;5.4;18;171;379;139;79;false;false;WC_BodyPoint.LeftKnee;fcs=0 invalid,no_t,no_fcs
+
+// 12 előkészítés - a talp szenzorok néha eltűnnek - és ez megöli a terheletlen sort is
+// 12a a terheletlent nem lehet automatikusan megcsinálni mert ha a beteg talpa torz, csak terheltet fog beküldeni
+// 12b kell egy gomb amivel ki lehet váltani a terheletlen sor mérését és tárolni kell a sorokat per talp típus
+// 12c tudni kell, hány órája volt a terheletlen sor felvéve, ki kell írni. ha régi javasolni kell, hogy vegyen fel újat
+// 12c-b terv: minden mérés előtt igen, külön fel kell venni és letárolni a terheletlen sort, majd a betegre felszerelni a talpat és mérni vele - talán ez a legjobb
+// 12c-b2: ebben az esetben validálni kell, hogy amivel felvette a terheletlent, azzal méri-e a beteget is?
+
+// 02 valamilyen háttérfolyamaton dolgozik a program és ezért meg-megakad  - hfelvételészítés után ez roppant zavaróvá válik, előtte csupán "könnyen észrevehető"
+// 03 ha több jobb vagy több bal oldali talpbetét jelenik meg, az az oldal legyen sárga, méret helyett legyen ?,
+// 03a ha több azonos oldali talpbetét van, a hwinfo lapon az ábrán is legyen erre figyelmeztetés - okoztam ilyen esetet, nem volt egyértelmű a helyzet - itt is segítene, ha minden hw látszana
+// 03b ha egy vagy több több talpbetét nélküli adatgyűjtő van, a hwinfo lapon is legyen erre figyelmeztetés - ha minden hw látszana, nem lenne kérdéses
+// todo 03b1 a hwinfo lapon a lista nézet átszervezése, bele került egy low battery ikon, itt jó lenne jobb szimbólumot használni, és
+// az is jó lenne, ha több egység adata férne ki egy oldalra - legyen rövidebb a sor  és ha nem fér ki egy oldalra a lista,
+// két oszlopba kellene törni ugyanakkor a 3 oszlop már szerintem is túlzás - ebben az esetben kellene egy figyelmeztetés is, hogy túl sok a jóból
+// 03c ha batt low van, a hw lapon a listában és az ábrán is legyen erre figyelmeztetés
+// TODO 03e hardwareinfo lapon a verzió nevének frissítéskor nem feltétlenül fér ki az adott területre az ábrán
+// 03f hardwareinfo lapon az ip és mac a középső ábrából levenni
+// TODO 03g az update szolgáltatást be kellene lőni - a program kap egy url-t és onnan leszedi ezt a részét kell összerakni a webszolgáltatáőssal, ahol az url-t megadom
+// 04 a hwchecker nem kell, egymás ellen dolgoznak a hwsignal listenerrel és van benne valami eszement többszálúság is
+// kell viszont egy mechanizmus hogy aki nem küld semmit, hogy lesz offline
+// ezt a hwsignal listeren kéne intéznie önállóan , nem kell ehez checker
+// aki küld eliveot, legyen azonnal alive
+// egy idő után át kell nézni a listánkat, és aki túl régen küldött, legyen offline, tehát kell egy timer
+// végigmegyünk a listán és ha valaki már régóta nem küld, legyen offline
+// 16 a jobb kamerán nem látszhat a bal boka a test takarás miatt, de a kamera képen mégis húzható a négyzet
+
+// 2022.01.03. bemutató konklúziók:
+// 25 csak talpvizsgalati lap, hisztogram? Online megjelenés
+//  - csontváz bogyó hiányzik
+//  a színek kezelése nem jó, nem a bodypointnak van színe, hanem a kalibráció által a calibrationitemnek - amiben egyszer van egy markercolor(rajzolós szín), másszor van egy marker.color(az ürge testire ragasztott bogyó valódi színe)
+// 27 -előkészítés lapon csontváz képek középre,
+// 27d  -kamera képeknél rajzoljuk ki futópad referenciapontokat - referencia pontokat lehessen felvenni
+
+// 27a -ugyanott a sec lapon csak 4 kamera képe legyen, és legyen olyan nagy, ahogy csak kifér
+//todo 27b -ugyanott a szövegeket optimalizalni
+//todo 27c -ugyanott button tooltipeket felrakni
+// 27e - a csontváz kép felesleges, ha a kalibráció adatait az élő kamera képre elő tudjuk állítani - de nem felesleges, mert azon anatómiai pontok mutathatók, míg a kameraképen hozzávetőleges pozíció mutatható
+// 28 -vizsgálat lapon forditasok
+//29 -unloaded értékeket menteni, visszatölteni - két indítás között - illetve jelezni az idejét és azt hogy "túl régi"
+// 29b unload ideje túl régi -> legyen a újrakalibrálás gomb PIROS
+// todo 30  -eszközinformaciok lapon a szemközti kamera text le van vágva
+// todo 30a -ugyanott legyen filter, hogy milyen eszközök jelenjenek meg a listában (online, offline, nem hozzarendelt, típusok szerinti, stb)
+// todo 30b -napló bejegyzéseket véglegesíteni
+// todo 31 -Settings oldalon legyen valami, vagy ne látszódjon
+// todo 31a - settings oldalon: van egy rakás definícó és konfig fájlból jövő érték, amit a settingsre kellene átvinni - itt kell ugye egy settings struktúra
+// 31b a sok konstans definícoó helyett settingsbe kellene gyűjteni a mindent is,
+//pl unloaded: 100 db, de 50-500-ig jó, pl
+//32 -menü fontsize legyen nagyobb
+//todo 33 -legyen egy olyan felvétel, amikor feláll az ember a gépre és hova kerültek a golyók, ha jön jövőre, akkor ugyanoda tegyük a golyókat (atlatszosaggal feltesszuk a korábbi állóképet) ide rögzíteni kell a futópad referencia pontjait is
+//todo 33a legyen az előkészítés lapon egy gomb, amivel lement egy képet - ha van ilyen kép, azt visszatöltve ki kellene tudni rakni a kameraképre áttetszően, hogy a fpontos elöltöztetlést lehessen az előző állapothoz viszonyítani
+//  33b FrontCameraToggle - toggle buttonok - nem váltanak át a kamera képre
+
+// 34 talp képek nél fekete háttér helyett legyen fehér! (beállítható)
+// 35 ha egy talpbetétet gyűjtés közben kicserélek egy másikra, a csík kint marad
+// 36v a talpbetét lemerül, detektálni kell valahogy és legyen erre vonatkozóan egy jelzés
+// ha egy irányhoz már kötött adatgyűjtő nincs jelen, aliveot nem küld és nem elérhető, vagy lemerült, vagy kikapcsolták
+// ha előbb volt talpbetét és most hirtelen nincs, akkor legyen egy check battery
+// ha az előbb se volt, akkor be sem kapcsolták még
+// 36 zs ha nem minden előkészített kamera bír elindulni legyen valami jelzés - illetve legyen kijelzés a felvételkészítés lapon az előkészítés állapotáról - illetve az indítás állapotáról
+// tételes lista, milyen hardverek lettek előkészítve, és ezek elindultak-e illetve leálltak-e illetve hoztak-e adatot
+// táblázat - sorok a hardverek, oszlop a fázisok, piros x vagy zöld pipa - ezt így képzelem el
+// mely hw melyik fázist milyen üzenettel - ha volt hiba
+// todo 36 ha kalibrációkor nincsen egyetlen irányba állított kamera sem, akkor legyen figyelmeztetés erre!
+// ha kalibrációkor kevesebb kameránk volt mint most van(közben vettünk még), akkor most van legalább egy nem kalibrált kameránk is
+// előkészítlés során kell figyelmeztetni erre, hogy ácsi, a kalibrációnk nem minden elérhető kamerát tartalmazza!
+// 39 a lejátszás lapon a new frame eventben a rajzolásnál legyen egy nyomásértékeket tartalmazó mátrix a 3d megjelenítő számára
+
+//Lacinak
+//--------------------------------
+// 01. lehessen visszatölteni // f
+//  01a csak akkor tölti vissza, ha sikerült elmentenie mindent, a diagnózist is -> ha ez sikertelen, akkor is lehessen
+// - ha a lejátszáshoz szükséges elemek rendelkezésre állnak, menjen a funkció
+// todo 1b 8.kalibráció feltöltés
+// 1c exam update API
+
+//  02. 3d ábra maximumát állítani  // f
+// todo 03. késleltetési időket átállítani
+// 04. nyomtatás, pdf generálás // f
+// todo 04a ha a pdf-et nem tudja elmenteni, nem menti el a vizsgálatot sem
+// todo 04b ha nincs telepítve a nyomtató modul, akkor ne próbálkozzon semmivel - nincs telepítve != nem fut - ez két külömn  hiba
+// 05. legyen flag, ami megmondja, hgoy online vizsgálat, és ha az, annak kell egy külön lap
+
+// todo 06. kioszk mód
+// todo 06a. release mód
+
+// 7. futópad pozíció -> kalibráció
+// calibration page: felrakni egy togglebuttont, hogy Mode = ModeEnum.futópad_sarkai,
+// ha a ModeEnum == futópad_sarkai, akkor az CanvasRect_OnPointerReleased -ben a koordinátát leszedjük, és eltároljuk - 4 db kell legyen,ba, bf jf ja
+// ha validálni akarnánk, kellene egy képzeletbeli középpont, amihez képest el lehet dönteni, hogy amúhy j/b illetve f/l
+// majd jól begyűjtjük a pontokat- illetve ha már vannak, ki kell rajzolnunk a pontokat, illetve, ha mind a 4 pont megvan már, akkor a futópadot jelképező trapézt, jelezvén, hogy ok.
+// kalibráció: ref pont: hol a futópad sarka - a: megjelöl egérrel b: megjelöl bogyóval  - ha nem oda esik, ahova kellene, jelezzen!
+// előkészítés: prep sec page - cam mode -> rajzolni
+
+// 7a futópad pozíció: migráció, adattábla
+// todo 7b validálni a sarkakat a kép éleivel párhuzamos, szimmetrikus stb...
+//  7c Globaldata._threadmillType-ot perzisztálni - indításwkor legyen már fogalmunk arról, milyen futópadja van
+// todo 7d külön futópad fül? kalibráció ugyanis a kamerákról és a bodypointokról szól, nem kellene a futópadot is ide keverni, ellenben a kezeléséhez célszerű lenne egy saját lap
+
+// 8 talp súlyozás ez alapján: globaldata.DefaultInsoleExaminationType
+// GlobalData.DefaultInsoleExaminationType.InsoleExaminationTypeAreas ojjektumot, ebben vannak definiálva a területek
+// * minden területre be kell állítani ebben az ojjektumban, hogy mennyi a bele eső nyomás százalékos értéke
+// * a talpak háttere legyen fekete
+// * ha megnyomom a reset gombot, akkor nullázza ki nálad is a maximumot a 2d talpon
+// * csináljuk meg a minimum limit kezelését (a heatmap-en ne legyen kék)
+
+// todo 09 wordkódok, fordítások tesztelés - literális stringek -> wcode, volt ilyen programunk
+
+// 2022.04.28. teszt
+// 40 a bal oldalon a menü legyen nagyobb, hogy ujjal jobban eltalálható legyen
+// todo 41 lejátszáskor a görbék - a sárga és a narancs lehet-e úgy eltolható, fedésbe hozható, hogy a külömbségek láthatóvá váljanak
+// todo 42 külömbségek (+/- eltérések) ábrázolása zöld, illetve piros színnel
+// todo 45 lejátszáskor akad, a lejátszó mintha lassítva adná a képet
+// a talpnyomás minimum konstans, de számítani is kellene egy értékez és esetleg azt használni
+//  lejátszáskor a heatmap küszöbszint legyen magasabb
+// todo 43 beteg felvitele -> táblagépen nem lehet beírni
+// todo 43b kiválasztáskor duplán kell böknui
+// todo 44 belépés (szinkronizáció?) lassú
+// 46 talpbetét újraindítás fix
+// lapokról a navigáslás menü korlátozása
+/*
+
+Imi teszt 2022.05.12.
+
+61 Login-nál előző felhasználó neve legyen beírva és a fokusz a jelszóra.
+todo 62 Beteg menü választás után fókusz a listára.
+todo 63 A vizsgálatok listája a beteg lista alá kerüljön.
+todo 64 A jobb oldali adat lista egész lapos legyen.
+65 A csontvázak középre helyezése.
+66 Előkészítésnél ha  a jobb és a bal loggeren kívűl van más egyéb logger tudjunk róla.
+67 Ugyanazon a lapon ha több jobb oldal vagy több bal oldali logger van arról is tudjunk.
+
+
+//hu: előkészítés:
+// insole, camera
+// loaded, unloaded
+// bal? jobb?
+
+//en: eszközinformációk, menü lefele
+// dátumok magyar formátumban maradnak
+// előkészítés : új kalibráció
+// 36 bal, 36jobb
+
+//de: loghin
+// erlcome, please ....
+// menü
+// pácioens lap: born
+// felvétel: selected ...
+// recording
+// hwinfo lap angol
+// diagnose lap minden angol
+// kalibráció lap angol
+
+hu:
+Missing wordcodes:
+*/
+
+using System;
+
+namespace wcodes {
+    public enum Lang { EN, HU, DE }
+
+
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
+    public class Translation : Attribute
+    {
+        private string _s;
+        private Lang _l;
+
+        public Translation(string s, Lang l)
+        {
+            this._s = s;
+            this._l = l;
+        }
+    }
+
+}
+
+/*
+
+var msg = GlobalTranslation.Translate("WC_UI_UWP_Pages.Examination.DataProcessing");
+
+    //WC_UI_UWP_Pages.Examination.NoPrevInsole
+    [Translation("A korábban előkészített adatgyűjtő nem áll készen, kérem kapcsolja be, vagy ellenőrízze a töltöttséget!", Lang.HU)]
+    [Translation("", Lang.EN)]
+    [Translation("", Lang.DE)]
+    public static class NoPrevInsole { }
+
+    //WC_UI_UWP_Pages.Examination.UnableToSave
+    [Translation("", Lang.HU)]
+    [Translation("Unable to save unloaded insole pressure values to file", Lang.EN)]
+    [Translation("", Lang.DE)]
+    public static class UnableToSave { }
+
+
+select WordCode, LanguageCode, "Text" from lang.Translations t1 where exists
+(
+        select  WordCode, LanguageCode, "Text" from  lang.Translations t2 where
+                t1."Text" = t2."Text"
+                and
+                t1.LanguageCode <> t2.LanguageCode
+)
+
+WordCode	LanguageCode	Text
+WC_UI_UWP_Pages.Patient.ListCount	hu-HU	A listában lévő betegek száma:
+WC_UI_UWP_Pages.Patient.ListCount	en-US	A listában lévő betegek száma:
+WC_UI_UWP_Pages.Patient.ListCount	de-DE	A listában lévő betegek száma:
+WC_MenuContent.AccountManagement	de-DE	Account Management
+WC_MenuContent.AccountManagement	en-US	Account Management
+WC_UI_Web_User.Label.Active	de-DE	Active
+WC_UI_Web_Hardware.Label.Active	de-DE	Active
+WC_UI_Web_Hardware.Label.Active	en-US	Active
+WC_UI_Web_User.Label.Active	en-US	Active
+WC_UI_Web_Hardware.Label.Active	hu-HU	Active
+WC_UI_Web_BodyPartProperty.Button.AddNewBodyPartProperty	en-US	Add New Body Part Property
+WC_UI_Web_BodyPartProperty.PageHeader.AddNewBodyPartProperty	en-US	Add New Body Part Property
+WC_UI_Web_BodyPartProperty.Button.AddNewBodyPartProperty	de-DE	Add New Body Part Property
+WC_UI_Web_BodyPartProperty.PageHeader.AddNewBodyPartProperty	de-DE	Add New Body Part Property
+WC_UI_Web_BodyPartProperty.Button.AddNewBodyPartProperty	hu-HU	Add New Body Part Property
+WC_UI_Web_BodyPartProperty.PageHeader.AddNewBodyPartProperty	hu-HU	Add New Body Part Property
+WC_UI_Web_Examination.Button.AddNewExamination	hu-HU	Add New Examination
+WC_UI_Web_Examination.PageHeader.AddNewExamination	hu-HU	Add New Examination
+WC_UI_Web_Examination.Button.AddNewExamination	en-US	Add New Examination
+WC_UI_Web_Examination.PageHeader.AddNewExamination	en-US	Add New Examination
+WC_UI_Web_Examination.Button.AddNewExamination	de-DE	Add New Examination
+WC_UI_Web_Examination.PageHeader.AddNewExamination	de-DE	Add New Examination
+WC_UI_Web_Hardware.PageHeader.AddNewHardware	de-DE	Add New Hardware
+WC_UI_Web_Hardware.Button.AddNewHardware	de-DE	Add New Hardware
+WC_UI_Web_Hardware.Button.AddNewHardware	en-US	Add New Hardware
+WC_UI_Web_Hardware.PageHeader.AddNewHardware	en-US	Add New Hardware
+WC_UI_Web_Hardware.Button.AddNewHardware	hu-HU	Add New Hardware
+WC_UI_Web_Hardware.PageHeader.AddNewHardware	hu-HU	Add New Hardware
+WC_UI_Web_HardwareUpdate.Button.AddNewHardwareUpdate	hu-HU	Add New Hardware Update
+WC_UI_Web_HardwareUpdate.PageHeader.AddNewHardwareUpdate	hu-HU	Add New Hardware Update
+WC_UI_Web_HardwareUpdate.Button.AddNewHardwareUpdate	en-US	Add New Hardware Update
+WC_UI_Web_HardwareUpdate.PageHeader.AddNewHardwareUpdate	en-US	Add New Hardware Update
+WC_UI_Web_HardwareUpdate.Button.AddNewHardwareUpdate	de-DE	Add New Hardware Update
+WC_UI_Web_HardwareUpdate.PageHeader.AddNewHardwareUpdate	de-DE	Add New Hardware Update
+WC_UI_Web_License.PageHeader.AddNewLicense	de-DE	Add New License
+WC_UI_Web_License.Button.AddNewLicense	de-DE	Add New License
+WC_UI_Web_License.Button.AddNewLicense	en-US	Add New License
+WC_UI_Web_License.PageHeader.AddNewLicense	en-US	Add New License
+WC_UI_Web_License.PageHeader.AddNewLicense	hu-HU	Add New License
+WC_UI_Web_License.Button.AddNewLicense	hu-HU	Add New License
+WC_UI_Web_Organization.Button.AddNewOrganization	en-US	Add New Organization
+WC_UI_Web_Organization.PageHeader.AddNewOrganization	en-US	Add New Organization
+WC_UI_Web_Organization.Button.AddNewOrganization	de-DE	Add New Organization
+WC_UI_Web_Organization.PageHeader.AddNewOrganization	de-DE	Add New Organization
+WC_UI_Web_Patient.PageHeader.AddNewPatient	de-DE	Add New Patient
+WC_UI_Web_Patient.Button.AddNewPatient	de-DE	Add New Patient
+WC_UI_Web_Patient.PageHeader.AddNewPatient	en-US	Add New Patient
+WC_UI_Web_Patient.Button.AddNewPatient	en-US	Add New Patient
+WC_UI_Web_Patient.Button.AddNewPatient	hu-HU	Add New Patient
+WC_UI_Web_Patient.PageHeader.AddNewPatient	hu-HU	Add New Patient
+WC_UI_Web_QueryOption.Button.AddNewQueryOption	hu-HU	Add New Query Option
+WC_UI_Web_QueryOption.PageHeader.AddNewQueryOption	hu-HU	Add New Query Option
+WC_UI_Web_QueryOption.PageHeader.AddNewQueryOption	en-US	Add New Query Option
+WC_UI_Web_QueryOption.Button.AddNewQueryOption	en-US	Add New Query Option
+WC_UI_Web_QueryOption.Button.AddNewQueryOption	de-DE	Add New Query Option
+WC_UI_Web_QueryOption.PageHeader.AddNewQueryOption	de-DE	Add New Query Option
+WC_UI_Web_Role.Button.AddNewRole	de-DE	Add New Role
+WC_UI_Web_Role.PageHeader.AddNewRole	de-DE	Add New Role
+WC_UI_Web_Role.PageHeader.AddNewRole	en-US	Add New Role
+WC_UI_Web_Role.Button.AddNewRole	en-US	Add New Role
+WC_UI_Web_User.PageHeader.AddNewUser	en-US	Add New User
+WC_UI_Web_User.Button.AddNewUser	en-US	Add New User
+WC_UI_Web_User.Button.AddNewUser	de-DE	Add New User
+WC_UI_Web_Patient.Label.Address	de-DE	Address
+WC_UI_UWP_Pages.Patient.Address	en-US	Address
+WC_UI_Web_Patient.Label.Address	en-US	Address
+WC_UI_Web_Patient.Label.Address	hu-HU	Address
+WC_UI_Web_Organization.FieldSet.AdminUser	en-US	Admin User
+WC_UI_Web_Organization.FieldSet.AdminUser	hu-HU	Admin User
+WC_UI_Web_Organization.FieldSet.AdminUser	de-DE	Admin User
+WC_UI_Web_Home.Label.AnalysisInThisMonth	de-DE	Analysis In This Month
+WC_UI_Web_Home.Label.AnalysisInThisMonth	hu-HU	Analysis In This Month
+WC_UI_Web_Home.Label.AnalysisInThisMonth	en-US	Analysis In This Month
+WC_UI_Web_Home.Label.AnalysisInThisWeek	en-US	Analysis In This Week
+WC_UI_Web_Home.Label.AnalysisInThisWeek	hu-HU	Analysis In This Week
+WC_UI_Web_Home.Label.AnalysisInThisWeek	de-DE	Analysis In This Week
+WC_UI_Web_Home.Label.AnalysisInfo	de-DE	Analysis Info
+WC_UI_Web_Home.Label.AnalysisInfo	hu-HU	Analysis Info
+WC_UI_Web_Home.Label.AnalysisInfo	en-US	Analysis Info
+WC_UI_Web_Home.Label.AnalysisOverall	en-US	Analysis Overall
+WC_UI_Web_Home.Label.AnalysisOverall	hu-HU	Analysis Overall
+WC_UI_Web_Home.Label.AnalysisOverall	de-DE	Analysis Overall
+WC_UI_UWP_Pages.Results.TimelineTitle	en-US	Analysis timeline
+WC_UI_UWP_Pages.Results.TimelineTitle	de-DE	Analysis timeline
+WC_UI_Web_Home.Label.AnalysisToday	de-DE	Analysis Today
+WC_UI_Web_Home.Label.AnalysisToday	hu-HU	Analysis Today
+WC_UI_Web_Home.Label.AnalysisToday	en-US	Analysis Today
+WC_BodyPart.Ankle	en-US	Ankle
+WC_BodyPart.Ankle	de-DE	Ankle
+WC_UI_UWP_Pages.Examination.LoadingCalibrations	de-DE	Applying calibrations
+WC_UI_UWP_Pages.Examination.LoadingCalibrations	en-US	Applying calibrations
+WC_UI_Web_Common.Alert.AreYouSureToDeleteTheRecord	en-US	Are You Sure To Delete The Record?
+WC_UI_Web_Common.Alert.AreYouSureToDeleteTheRecord	de-DE	Are You Sure To Delete The Record?
+WC_UI_Web_Common.GridActionButtons.AssignRights	de-DE	Assign Rights
+WC_UI_Web_Common.GridActionButtons.AssignRights	en-US	Assign Rights
+WC_UI_UWP_Common.Label.Associate	en-US	Associate
+WC_UI_UWP_Common.Label.Associate	de-DE	Associate
+WC_UI_Web_Hardware.AWB.AUTO	de-DE	Auto
+WC_UI_Web_Hardware.AWB.AUTO	en-US	Auto
+WC_UI_UWP_Common.Label.Average	de-DE	Average
+WC_UI_UWP_Common.Label.Average	en-US	Average
+WC_UI_Web_Hardware.CameraParameters.Awb	de-DE	Awb
+WC_UI_Web_Hardware.CameraParameters.Awb	hu-HU	Awb
+WC_UI_Web_Hardware.CameraParameters.Awb	en-US	Awb
+WC_UI_UWP_Pages.Diagnose.ImagePicker.BackCamera	de-DE	Back camera
+WC_UI_UWP_Pages.Diagnose.ImagePicker.BackCamera	en-US	Back camera
+WC_UI_Web_User.Label.Barcode	en-US	Barcode
+WC_UI_Web_User.Label.Barcode	de-DE	Barcode
+WC_MenuContent.Examination.BodyPartProperty	en-US	Body Part Property
+WC_MenuContent.Examination.BodyPartProperty	de-DE	Body Part Property
+WC_MenuContent.Examination.BodyPartProperty	hu-HU	Body Part Property
+WC_UI_Web_BodyPartProperty.PageHeader.BodyPartPropertyDetails	hu-HU	Body Part Property Details
+WC_UI_Web_BodyPartProperty.PageHeader.BodyPartPropertyDetails	de-DE	Body Part Property Details
+WC_UI_Web_BodyPartProperty.PageHeader.BodyPartPropertyDetails	en-US	Body Part Property Details
+WC_UI_Web_BodyPartProperty.Label.BodyPartPropertyName	hu-HU	Body Part Property Name
+WC_UI_Web_BodyPartProperty.Label.BodyPartPropertyName	en-US	Body Part Property Name
+WC_UI_Web_BodyPartProperty.Label.BodyPartPropertyName	de-DE	Body Part Property Name
+WC_Group.BodyPartProperty	hu-HU	BodyPartProperty
+WC_Group.BodyPartProperty	de-DE	BodyPartProperty
+WC_Group.BodyPartProperty	en-US	BodyPartProperty
+WC_UI_Web_Patient.Label.BornCity	en-US	Born City
+WC_UI_Web_Patient.Label.BornCity	hu-HU	Born City
+WC_UI_Web_Patient.Label.BornCity	de-DE	Born City
+WC_UI_Web_Patient.Label.BornDate	de-DE	Born Date
+WC_UI_Web_Patient.Label.BornDate	hu-HU	Born Date
+WC_UI_Web_Patient.Label.BornDate	en-US	Born Date
+WC_UI_Web_Patient.Label.BornName	en-US	Born Name
+WC_UI_Web_Patient.Label.BornName	hu-HU	Born Name
+WC_UI_Web_Patient.Label.BornName	de-DE	Born Name
+WC_UI_UWP_Pages.Patient.Born	en-US	Born:
+WC_UI_UWP_Pages.Patient.Born	de-DE	Born:
+WC_UI_UWP_Pages.CalibrationItemControl.RectangleStatusTooltip	de-DE	Bounding rectangle status of the selected body point and direction
+WC_UI_UWP_Pages.CalibrationItemControl.RectangleStatusTooltip	en-US	Bounding rectangle status of the selected body point and direction
+WC_UI_Web_Hardware.CameraParameters.Brightness	de-DE	Brightness
+WC_UI_Web_Hardware.CameraParameters.Brightness	en-US	Brightness
+WC_UI_Web_QueryOption.Label.Calendar	de-DE	Calendar
+WC_UI_Web_QueryOption.Label.Calendar	en-US	Calendar
+WC_UI_Web_QueryOption.Label.Calendar	hu-HU	Calendar
+WC_UI_Web_Examination.Label.CalibrationId	hu-HU	Calibration
+WC_UI_Web_Examination.Label.CalibrationId	en-US	Calibration
+WC_ExaminationType.CalibrationType	en-US	Calibration
+WC_UI_UWP_Pages.Calibration.Title	en-US	Calibration
+WC_UI_UWP_Menu.Calibration	en-US	Calibration
+WC_UI_UWP_Pages.Calibration.Title	de-DE	Calibration
+WC_UI_Web_Examination.Label.CalibrationId	de-DE	Calibration
+WC_UI_Web_Examination.Label.CalibrationDataArray	de-DE	Calibration Data
+WC_UI_Web_Examination.Label.CalibrationDataArray	en-US	Calibration Data
+WC_UI_Web_Examination.Label.CalibrationDataArray	hu-HU	Calibration Data
+WC_UI_UWP_Pages.CalibrationNameDialog.EditTitle	de-DE	Calibration name
+WC_UI_UWP_Pages.CalibrationNameDialog.EditTitle	en-US	Calibration name
+WC_UI_UWP_Pages.Calibration.Name	en-US	Calibration name:
+WC_UI_UWP_Pages.Calibration.Name	de-DE	Calibration name:
+WC_UI_UWP_Pages.CalibrationItemControl.CalibrationStatusTooltip	de-DE	Calibration status of the selected body point and direction
+WC_UI_UWP_Pages.CalibrationItemControl.CalibrationStatusTooltip	en-US	Calibration status of the selected body point and direction
+WC_HardwareUpdateType.Camera	en-US	Camera
+WC_HardwareType.Camera	en-US	Camera
+WC_HardwareType.Camera	de-DE	Camera
+WC_HardwareUpdateType.Camera	de-DE	Camera
+WC_UI_UWP_Pages.Results.CameraTitle	de-DE	Camera direction charts
+WC_UI_UWP_Pages.Results.ObjectsTitle	de-DE	Camera direction charts
+WC_UI_UWP_Pages.Results.ObjectsTitle	en-US	Camera direction charts
+WC_UI_UWP_Pages.Results.CameraTitle	en-US	Camera direction charts
+WC_UI_UWP_Pages.Examination.CameraPreparationError	en-US	Camera error
+WC_UI_UWP_Pages.Examination.CameraPreparationError	de-DE	Camera error
+WC_UI_UWP_Menu.LogoutDialog.Cancel	de-DE	Cancel
+WC_UI_UWP_Menu.LogoutDialog.Cancel	en-US	Cancel
+WC_UI_UWP_Common.Label.CancelText	en-US	Cancel
+WC_UI_UWP_Pages.Examination.CameraCannotRecord	en-US	Cannot start recording on camera!
+WC_UI_UWP_Pages.Examination.CameraCannotRecord	de-DE	Cannot start recording on camera!
+WC_UI_UWP_Pages.Examination.InsoleCannotRecord	de-DE	Cannot start recording on insole!
+WC_UI_UWP_Pages.Examination.InsoleCannotRecord	en-US	Cannot start recording on insole!
+WC_UI_Web_User.Label.CartNumber	de-DE	Cart Number
+WC_UI_Web_User.Label.CartNumber	en-US	Cart Number
+WC_UI_Web_Common.GridActionButtons.ChangePassword	en-US	Change Password
+WC_UI_Web_Common.Button.ChangePassword	en-US	Change Password
+WC_UI_Web_Common.GridActionButtons.ChangePassword	de-DE	Change Password
+WC_UI_Web_Common.Button.ChangePassword	de-DE	Change Password
+WC_UI_Web_User.PageHeader.ChangeUserPassword	de-DE	Change User Password
+WC_UI_Web_User.PageHeader.ChangeUserPassword	en-US	Change User Password
+WC_UI_Web_Validation.MaximumCharacterError	en-US	Characters length is too much
+WC_UI_Web_Validation.MaximumCharacterError	de-DE	Characters length is too much
+WC_UI_Web_Common.Button.Choose	en-US	Choose
+WC_UI_Web_Common.Button.Choose	de-DE	Choose
+WC_UI_Web_Common.Label.ClearFilters	en-US	Clear Filters
+WC_UI_Web_Common.Label.ClearFilters	de-DE	Clear Filters
+WC_UI_Web_Common.GridActionButtons.Close	de-DE	Close
+WC_UI_Web_Common.GridActionButtons.Close	en-US	Close
+WC_UI_UWP_Common.Label.CloseText	en-US	Close
+WC_UI_Web_Common.GridActionButtons.Close	hu-HU	Close
+WC_UI_Web_Hardware.AWB.CLOUDY	en-US	Cloudy
+WC_UI_Web_Hardware.AWB.CLOUDY	de-DE	Cloudy
+WC_UI_Web_BodyPartProperty.Label.Comments	en-US	Comments
+WC_UI_UWP_Pages.Patient.Comments	en-US	Comments
+WC_UI_Web_User.Label.Comments	de-DE	Comments
+WC_UI_Web_QueryOption.Label.Comments	de-DE	Comments
+WC_UI_Web_Organization.Label.Comments	de-DE	Comments
+WC_UI_Web_Patient.Label.Comments	de-DE	Comments
+WC_UI_Web_HardwareUpdate.Label.Comments	de-DE	Comments
+WC_UI_Web_Examination.Label.Comments	de-DE	Comments
+WC_UI_Web_BodyPartProperty.Label.Comments	de-DE	Comments
+WC_UI_Web_Examination.Label.Comments	en-US	Comments
+WC_UI_Web_User.Label.Comments	en-US	Comments
+WC_UI_Web_QueryOption.Label.Comments	en-US	Comments
+WC_UI_Web_Patient.Label.Comments	en-US	Comments
+WC_UI_Web_HardwareUpdate.Label.Comments	en-US	Comments
+WC_UI_Web_Organization.Label.Comments	en-US	Comments
+WC_UI_Web_BodyPartProperty.Label.Comments	hu-HU	Comments
+WC_UI_Web_HardwareUpdate.Label.Comments	hu-HU	Comments
+WC_UI_Web_Examination.Label.Comments	hu-HU	Comments
+WC_UI_Web_QueryOption.Label.Comments	hu-HU	Comments
+WC_UI_Web_Patient.Label.Comments	hu-HU	Comments
+WC_Group.Common	hu-HU	Common
+WC_Group.Common	de-DE	Common
+WC_Group.Common	en-US	Common
+WC_UI_Web_User.Label.ConfirmNewPassword	de-DE	Confirm New Password
+WC_UI_Web_User.Label.ConfirmNewPassword	en-US	Confirm New Password
+WC_UI_Web_User.Label.ConfirmPassword	en-US	Confirm Password
+WC_UI_Web_User.Label.ConfirmPassword	de-DE	Confirm Password
+WC_UI_Web_Common.Label.Contains	de-DE	Contains
+WC_UI_Web_Common.Label.Contains	en-US	Contains
+WC_UI_Web_Common.Label.Contains	hu-HU	Contains
+WC_UI_Web_Hardware.CameraParameters.Contrast	de-DE	Contrast
+WC_UI_Web_Hardware.CameraParameters.Contrast	en-US	Contrast
+WC_UI_Web_Common.GridActionButtons.CopyRecord	de-DE	Copy Record
+WC_UI_Web_Common.GridActionButtons.CopyRecord	en-US	Copy Record
+WC_UI_UWP_Pages.Results.CopyCameraButtonTooltip	en-US	Copy the pictures
+WC_UI_UWP_Pages.Results.CopyCameraButtonTooltip	de-DE	Copy the pictures
+WC_Marker.Correction	de-DE	Correction
+WC_Marker.Correction	en-US	Correction
+WC_HardwareUpdateType.CPU	en-US	CPU
+WC_HardwareType.CPU	en-US	CPU
+WC_HardwareType.CPU	de-DE	CPU
+WC_HardwareUpdateType.CPU	de-DE	CPU
+WC_HardwareType.CPU	hu-HU	CPU
+WC_HardwareUpdateType.CPU	hu-HU	CPU
+WC_UI_UWP_Pages.Results.AddSnapshotButtonTooltip	de-DE	Crates a new marker in the specified position
+WC_UI_UWP_Pages.Results.AddSnapshotButtonTooltip	en-US	Crates a new marker in the specified position
+WC_UI_Web_User.Label.CreateDate	de-DE	Create Date
+WC_UI_Web_Examination.Label.CreateDate	de-DE	Create Date
+WC_UI_Web_Examination.Label.CreateDate	en-US	Create Date
+WC_UI_Web_User.Label.CreateDate	en-US	Create Date
+WC_UI_Web_Examination.Label.CreateDate	hu-HU	Create Date
+WC_UI_Web_Examination.Label.CreateDateFrom	hu-HU	Create Date From
+WC_UI_Web_Examination.Label.CreateDateFrom	en-US	Create Date From
+WC_UI_Web_Examination.Label.CreateDateFrom	de-DE	Create Date From
+WC_UI_Web_Examination.Label.CreateDateTo	de-DE	Create Date To
+WC_UI_Web_Examination.Label.CreateDateTo	en-US	Create Date To
+WC_UI_Web_Examination.Label.CreateDateTo	hu-HU	Create Date To
+WC_UI_Web_Common.GridActionButtons.CreateRecord	de-DE	Create Record
+WC_UI_Web_Common.GridActionButtons.CreateRecord	en-US	Create Record
+WC_UI_Web_Home.Button.CreateRow	de-DE	Create Row
+WC_UI_Web_Home.Button.CreateRow	hu-HU	Create Row
+WC_UI_Web_Home.Button.CreateRow	en-US	Create Row
+WC_UI_UWP_Pages.Calibration.AddButtonTooltip	en-US	Creates a new calibration
+WC_UI_UWP_Pages.Calibration.AddButtonTooltip	de-DE	Creates a new calibration
+WC_UI_UWP_Pages.CalibrationItemControl.CalibrationStatusEnum_Current	de-DE	Current status:
+WC_UI_UWP_Pages.CalibrationItemControl.RectangleStatusEnum_Current	de-DE	Current status:
+WC_UI_UWP_Pages.CalibrationItemControl.CalibrationStatusEnum_Current	en-US	Current status:
+WC_UI_UWP_Pages.CalibrationItemControl.RectangleStatusEnum_Current	en-US	Current status:
+WC_UI_Web_Header.Label.Dashboard	en-US	Dashboard
+WC_UI_Web_Header.Label.Dashboard	hu-HU	Dashboard
+WC_UI_Web_Header.Label.Dashboard	de-DE	Dashboard
+WC_MenuContent.Home	en-US	Dashboard
+WC_MenuContent.Home	de-DE	Dashboard
+WC_UI_Web_Home.Label.DashboardName	de-DE	Dashboard Name
+WC_UI_Web_Home.Label.DashboardName	hu-HU	Dashboard Name
+WC_UI_Web_Home.Label.DashboardName	en-US	Dashboard Name
+WC_UI_Web_Globalization.Alert.DatabaseIsUpToDate	de-DE	Database is up to date!
+WC_UI_Web_Globalization.Alert.DatabaseIsUpToDate	en-US	Database is up to date!
+WC_UI_Web_Common.Label.Days	de-DE	Days
+WC_UI_Web_Common.Label.Days	en-US	Days
+WC_UI_Web_Common.Label.Days	hu-HU	Days
+WC_CommonLogLevel.Debug	hu-HU	Debug
+WC_CommonLogLevel.Debug	en-US	Debug
+WC_UI_UWP_Common.Label.Delete	en-US	Delete
+WC_UI_Web_Common.Button.Delete	en-US	Delete
+WC_UI_Web_Common.Button.Delete	de-DE	Delete
+WC_UI_Web_Common.GridActionButtons.DeleteRecord	en-US	Delete Record
+WC_UI_Web_Common.GridActionButtons.DeleteRecord	de-DE	Delete Record
+WC_UI_Web_BodyPartProperty.PageHeader.DeleteBodyPartProperty	de-DE	Delete The Body Part Property
+WC_UI_Web_BodyPartProperty.PageHeader.DeleteBodyPartProperty	en-US	Delete The Body Part Property
+WC_UI_Web_BodyPartProperty.PageHeader.DeleteBodyPartProperty	hu-HU	Delete The Body Part Property
+WC_UI_Web_Examination.PageHeader.DeleteExamination	hu-HU	Delete The Examination
+WC_UI_Web_Examination.PageHeader.DeleteExamination	en-US	Delete The Examination
+WC_UI_Web_Examination.PageHeader.DeleteExamination	de-DE	Delete The Examination
+WC_UI_Web_Hardware.PageHeader.DeleteHardware	de-DE	Delete The Hardware
+WC_UI_Web_Hardware.PageHeader.DeleteHardware	en-US	Delete The Hardware
+WC_UI_Web_Hardware.PageHeader.DeleteHardware	hu-HU	Delete The Hardware
+WC_UI_Web_HardwareUpdate.PageHeader.DeleteHardwareUpdate	hu-HU	Delete The Hardware Update
+WC_UI_Web_HardwareUpdate.PageHeader.DeleteHardwareUpdate	en-US	Delete The Hardware Update
+WC_UI_Web_HardwareUpdate.PageHeader.DeleteHardwareUpdate	de-DE	Delete The Hardware Update
+WC_UI_Web_License.PageHeader.DeleteLicense	de-DE	Delete The License
+WC_UI_Web_License.PageHeader.DeleteLicense	en-US	Delete The License
+WC_UI_Web_License.PageHeader.DeleteLicense	hu-HU	Delete The License
+WC_UI_Web_Organization.PageHeader.DeleteOrganization	en-US	Delete The Organization
+WC_UI_Web_Organization.PageHeader.DeleteOrganization	de-DE	Delete The Organization
+WC_UI_Web_Patient.PageHeader.DeletePatient	de-DE	Delete The Patient
+WC_UI_Web_Patient.PageHeader.DeletePatient	en-US	Delete The Patient
+WC_UI_Web_Patient.PageHeader.DeletePatient	hu-HU	Delete The Patient
+WC_UI_Web_QueryOption.PageHeader.DeleteQueryOption	hu-HU	Delete The Query Option
+WC_UI_Web_QueryOption.PageHeader.DeleteQueryOption	en-US	Delete The Query Option
+WC_UI_Web_QueryOption.PageHeader.DeleteQueryOption	de-DE	Delete The Query Option
+WC_UI_Web_Role.PageHeader.DeleteRole	de-DE	Delete The Role
+WC_UI_Web_Role.PageHeader.DeleteRole	en-US	Delete The Role
+WC_UI_UWP_Pages.Calibration.DeleteButtonTooltip	en-US	Deletes the current calibration
+WC_UI_UWP_Pages.Calibration.DeleteButtonTooltip	de-DE	Deletes the current calibration
+WC_UI_UWP_Pages.Results.RemoveSnapshotButtonTooltip	de-DE	Deletes the selected marker in the specified position
+WC_UI_UWP_Pages.Results.RemoveSnapshotButtonTooltip	en-US	Deletes the selected marker in the specified position
+WC_UI_Web_Role.Label.Description	de-DE	Description
+WC_UI_Web_Role.Label.Description	en-US	Description
+WC_UI_Web_Hardware.Label.Descriptor	en-US	Descriptor
+WC_UI_Web_Hardware.Label.Descriptor	hu-HU	Descriptor
+WC_UI_Web_Hardware.Label.Descriptor	de-DE	Descriptor
+WC_UI_UWP_Menu.Diagnose	de-DE	Diagnose
+WC_UI_UWP_Pages.Diagnose.Title	de-DE	Diagnose
+WC_UI_UWP_Menu.Diagnose	en-US	Diagnose
+WC_UI_UWP_Pages.Diagnose.Title	en-US	Diagnose
+WC_UI_Web_BodyPartProperty.Label.Pictures	en-US	Diagnosis images
+WC_UI_Web_BodyPartProperty.Label.Pictures	de-DE	Diagnosis images
+WC_UI_UWP_Pages.DiameterDialog.Title	de-DE	Diameter properties
+WC_UI_UWP_Pages.DiameterDialog.Title	en-US	Diameter properties
+WC_UI_UWP_Pages.HardwareInfo.DirectionLabel	de-DE	Direction:
+WC_UI_UWP_Pages.HardwareInfo.DirectionLabel	en-US	Direction:
+WC_UI_UWP_Pages.Log.ErrorToolTip	en-US	Displays errors of the application.
+WC_UI_UWP_Pages.Log.ErrorToolTip	de-DE	Displays errors of the application.
+WC_UI_UWP_Pages.Log.VerboseToolTip	de-DE	Displays events and logs belonging to any running block of code.
+WC_UI_UWP_Pages.Log.VerboseToolTip	en-US	Displays events and logs belonging to any running block of code.
+WC_UI_UWP_Pages.Log.DebugToolTip	en-US	Displays events and logs belonging to debugging.
+WC_UI_UWP_Pages.Log.DebugToolTip	de-DE	Displays events and logs belonging to debugging.
+WC_UI_UWP_Pages.Log.FatalToolTip	de-DE	Displays fatal errors of the application.
+WC_UI_UWP_Pages.Log.FatalToolTip	en-US	Displays fatal errors of the application.
+WC_UI_UWP_Pages.Log.InformationToolTip	en-US	Displays information.
+WC_UI_UWP_Pages.Log.InformationToolTip	de-DE	Displays information.
+WC_UI_UWP_Pages.Calibration.ClothingTemaplateButtonTooltip	de-DE	Displays the clothing template
+WC_UI_UWP_Pages.Calibration.ModeTooltip_Color	de-DE	Displays the clothing template
+WC_UI_UWP_Pages.Calibration.ClothingTemaplateButtonTooltip	en-US	Displays the clothing template
+WC_UI_UWP_Pages.Calibration.ModeTooltip_Color	en-US	Displays the clothing template
+WC_UI_UWP_Menu.HardwareTooltip	en-US	Displays the information about connected devices
+WC_UI_UWP_Menu.HardwareTooltip	de-DE	Displays the information about connected devices
+WC_UI_UWP_Pages.Log.WarningToolTip	de-DE	Displays warnings of the application.
+WC_UI_UWP_Pages.Log.WarningToolTip	en-US	Displays warnings of the application.
+WC_UI_UWP_Menu.LogoutDialog.Confirm	en-US	Do you want to save your work before logout?
+WC_UI_UWP_Menu.LogoutDialog.Confirm	de-DE	Do you want to save your work before logout?
+WC_UI_Web_User.Label.Email	en-US	Email
+WC_UI_Web_Patient.Label.Email	en-US	Email
+WC_UI_Web_Organization.Label.Email	en-US	Email
+WC_UI_Web_User.Label.Email	hu-HU	Email
+WC_UI_Web_Organization.Label.Email	hu-HU	Email
+WC_UI_Web_Patient.Label.Email	hu-HU	Email
+WC_UI_Web_User.Label.Email	de-DE	Email
+WC_UI_Web_Organization.Label.Email	de-DE	Email
+WC_UI_Web_Patient.Label.Email	de-DE	Email
+WC_UI_UWP_Pages.Patient.Email	en-US	E-mail
+WC_UI_UWP_Pages.Patient.Email	de-DE	E-mail
+WC_UI_UWP_Pages.Patient.Email	hu-HU	E-mail
+WC_UI_Web_Common.Label.EndOfTheDay	en-US	End Of The Day
+WC_UI_Web_Common.Label.EndOfTheDay	hu-HU	End Of The Day
+WC_UI_Web_Common.Label.EndOfTheDay	de-DE	End Of The Day
+WC_UI_Web_Common.Label.EndOfTheIsoWeek	de-DE	End Of The Iso Week
+WC_UI_Web_Common.Label.EndOfTheIsoWeek	hu-HU	End Of The Iso Week
+WC_UI_Web_Common.Label.EndOfTheIsoWeek	en-US	End Of The Iso Week
+WC_UI_Web_Common.Label.EndOfTheMonth	en-US	End Of The Month
+WC_UI_Web_Common.Label.EndOfTheMonth	hu-HU	End Of The Month
+WC_UI_Web_Common.Label.EndOfTheMonth	de-DE	End Of The Month
+WC_UI_Web_Common.Label.EndOfThePreviousDay	de-DE	End Of The Previous Day
+WC_UI_Web_Common.Label.EndOfThePreviousDay	hu-HU	End Of The Previous Day
+WC_UI_Web_Common.Label.EndOfThePreviousDay	en-US	End Of The Previous Day
+WC_UI_Web_Common.Label.EndOfThePreviousIsoWeek	en-US	End Of The Previous Iso Week
+WC_UI_Web_Common.Label.EndOfThePreviousIsoWeek	hu-HU	End Of The Previous Iso Week
+WC_UI_Web_Common.Label.EndOfThePreviousIsoWeek	de-DE	End Of The Previous Iso Week
+WC_UI_Web_Common.Label.EndOfThePreviousMonth	de-DE	End Of The Previous Month
+WC_UI_Web_Common.Label.EndOfThePreviousMonth	hu-HU	End Of The Previous Month
+WC_UI_Web_Common.Label.EndOfThePreviousMonth	en-US	End Of The Previous Month
+WC_UI_Web_Common.Label.EndOfThePreviousQuarter	en-US	End Of The Previous Quarter
+WC_UI_Web_Common.Label.EndOfThePreviousQuarter	hu-HU	End Of The Previous Quarter
+WC_UI_Web_Common.Label.EndOfThePreviousQuarter	de-DE	End Of The Previous Quarter
+WC_UI_Web_Common.Label.EndOfThePreviousWeek	de-DE	End Of The Previous Week
+WC_UI_Web_Common.Label.EndOfThePreviousWeek	hu-HU	End Of The Previous Week
+WC_UI_Web_Common.Label.EndOfThePreviousWeek	en-US	End Of The Previous Week
+WC_UI_Web_Common.Label.EndOfThePreviousYear	en-US	End Of The Previous Year
+WC_UI_Web_Common.Label.EndOfThePreviousYear	hu-HU	End Of The Previous Year
+WC_UI_Web_Common.Label.EndOfThePreviousYear	de-DE	End Of The Previous Year
+WC_UI_Web_Common.Label.EndOfTheQuarter	de-DE	End Of The Quarter
+WC_UI_Web_Common.Label.EndOfTheQuarter	hu-HU	End Of The Quarter
+WC_UI_Web_Common.Label.EndOfTheQuarter	en-US	End Of The Quarter
+WC_UI_Web_Common.Label.EndOfTheWeek	en-US	End Of The Week
+WC_UI_Web_Common.Label.EndOfTheWeek	hu-HU	End Of The Week
+WC_UI_Web_Common.Label.EndOfTheWeek	de-DE	End Of The Week
+WC_UI_Web_Common.Label.EndOfTheYear	de-DE	End Of The Year
+WC_UI_Web_Common.Label.EndOfTheYear	hu-HU	End Of The Year
+WC_UI_Web_Common.Label.EndOfTheYear	en-US	End Of The Year
+WC_UI_Web_Hardware.CameraParameters.Error	de-DE	Error in parameters
+WC_UI_Web_Hardware.CameraParameters.Error	en-US	Error in parameters
+WC_UI_UWP_Pages.Log.ErrorDescription	de-DE	Errors of the application.
+WC_UI_UWP_Pages.Log.ErrorDescription	en-US	Errors of the application.
+WC_UI_UWP_Pages.Examination.Label.Error	en-US	Errors:
+WC_UI_UWP_Pages.Examination.Label.Error	de-DE	Errors:
+WC_UI_UWP_Pages.Log.DebugDescription	en-US	Events and logs belonging to debugging.
+WC_UI_UWP_Pages.Log.DebugDescription	de-DE	Events and logs belonging to debugging.
+WC_MenuContent.Examination	de-DE	Examination
+WC_Group.Examination	de-DE	Examination
+WC_Group.Examination	en-US	Examination
+WC_MenuContent.Examination	en-US	Examination
+WC_UI_Web_QueryOption.Label.Examination	de-DE	Examination
+WC_UI_Web_QueryOption.Label.Examination	hu-HU	Examination
+WC_Group.Examination	hu-HU	Examination
+WC_MenuContent.Examination	hu-HU	Examination
+WC_UI_Web_QueryOption.Label.Examination	en-US	Examination
+WC_UI_Web_Examination.Label.ExaminationBodyPartResultAnkle	en-US	Examination Body Part Result Ankle
+WC_UI_Web_Examination.Label.ExaminationBodyPartResultAnkle	hu-HU	Examination Body Part Result Ankle
+WC_UI_Web_Examination.Label.ExaminationBodyPartResultAnkle	de-DE	Examination Body Part Result Ankle
+WC_UI_Web_Examination.Label.ExaminationBodyPartResultGeneral	de-DE	Examination Body Part Result General
+WC_UI_Web_Examination.Label.ExaminationBodyPartResultGeneral	hu-HU	Examination Body Part Result General
+WC_UI_Web_Examination.Label.ExaminationBodyPartResultGeneral	en-US	Examination Body Part Result General
+WC_UI_Web_Examination.Label.ExaminationBodyPartResultHip	en-US	Examination Body Part Result Hip
+WC_UI_Web_Examination.Label.ExaminationBodyPartResultHip	hu-HU	Examination Body Part Result Hip
+WC_UI_Web_Examination.Label.ExaminationBodyPartResultHip	de-DE	Examination Body Part Result Hip
+WC_UI_Web_Examination.Label.ExaminationBodyPartResultKnee	de-DE	Examination Body Part Result Knee
+WC_UI_Web_Examination.Label.ExaminationBodyPartResultKnee	hu-HU	Examination Body Part Result Knee
+WC_UI_Web_Examination.Label.ExaminationBodyPartResultKnee	en-US	Examination Body Part Result Knee
+WC_UI_Web_Examination.Label.ExaminationBodyPartResultShoulder	en-US	Examination Body Part Result Shoulder
+WC_UI_Web_Examination.Label.ExaminationBodyPartResultShoulder	hu-HU	Examination Body Part Result Shoulder
+WC_UI_Web_Examination.Label.ExaminationBodyPartResultShoulder	de-DE	Examination Body Part Result Shoulder
+WC_UI_Web_Examination.Label.ExaminationDataId	de-DE	Examination Data
+WC_PDF.ExaminationData	en-US	Examination data
+WC_UI_Web_Examination.Label.ExaminationDataId	hu-HU	Examination Data
+WC_UI_Web_Examination.Label.ExaminationDataId	en-US	Examination Data
+WC_UI_Web_Examination.Label.ExaminationDataMediaTypeId	en-US	Examination Data Media Type
+WC_UI_Web_Examination.Label.ExaminationDataMediaTypeId	hu-HU	Examination Data Media Type
+WC_UI_Web_Examination.Label.ExaminationDataMediaTypeId	de-DE	Examination Data Media Type
+WC_UI_Web_Home.Label.ExaminationDate	de-DE	Examination Date
+WC_UI_Web_Home.Label.ExaminationDate	hu-HU	Examination Date
+WC_UI_Web_Home.Label.ExaminationDate	en-US	Examination Date
+WC_UI_Web_Home.Label.ExaminationDetails	en-US	Examination Details
+WC_UI_Web_Examination.PageHeader.ExaminationDetails	en-US	Examination Details
+WC_UI_Web_Home.Label.ExaminationDetails	hu-HU	Examination Details
+WC_UI_Web_Examination.PageHeader.ExaminationDetails	hu-HU	Examination Details
+WC_UI_Web_Home.Label.ExaminationDetails	de-DE	Examination Details
+WC_UI_Web_Examination.PageHeader.ExaminationDetails	de-DE	Examination Details
+WC_UI_Web_Examination.Label.ExaminationEndDate	de-DE	Examination End Date
+WC_UI_Web_Examination.Label.ExaminationEndDate	hu-HU	Examination End Date
+WC_UI_Web_Examination.Label.ExaminationEndDate	en-US	Examination End Date
+WC_UI_Web_Examination.Label.ExaminationEndDateFrom	en-US	Examination End Date From
+WC_UI_Web_Examination.Label.ExaminationEndDateFrom	hu-HU	Examination End Date From
+WC_UI_Web_Examination.Label.ExaminationEndDateFrom	de-DE	Examination End Date From
+WC_UI_Web_Examination.Label.ExaminationEndDateTo	de-DE	Examination End Date To
+WC_UI_Web_Examination.Label.ExaminationEndDateTo	hu-HU	Examination End Date To
+WC_UI_Web_Examination.Label.ExaminationEndDateTo	en-US	Examination End Date To
+WC_UI_Web_Examination.Label.ExaminationLead	en-US	Examination Lead
+WC_UI_Web_Examination.Label.ExaminationLead	hu-HU	Examination Lead
+WC_UI_Web_Examination.Label.ExaminationLead	de-DE	Examination Lead
+WC_UI_Web_Examination.Label.ExaminationName	en-US	Examination Name
+WC_UI_Web_Examination.Label.ExaminationName	hu-HU	Examination Name
+WC_UI_Web_Examination.Label.ExaminationName	de-DE	Examination Name
+WC_UI_Web_Examination.Label.ExaminationResultDataArray	de-DE	Examination Result Data
+WC_UI_Web_Examination.Label.ExaminationResultDataArray	hu-HU	Examination Result Data
+WC_UI_Web_Examination.Label.ExaminationResultDataArray	en-US	Examination Result Data
+WC_UI_Web_Examination.Label.ExaminationResultPdfId	en-US	Examination Result Pdf
+WC_UI_Web_Examination.Label.ExaminationResultPdfId	hu-HU	Examination Result Pdf
+WC_UI_Web_Examination.Label.ExaminationResultPdfId	de-DE	Examination Result Pdf
+WC_UI_Web_Examination.Label.ExaminationStartDate	de-DE	Examination Start Date
+WC_UI_Web_Examination.Label.ExaminationStartDate	hu-HU	Examination Start Date
+WC_UI_Web_Examination.Label.ExaminationStartDate	en-US	Examination Start Date
+WC_UI_Web_Examination.Label.ExaminationStartDateFrom	en-US	Examination Start Date From
+WC_UI_Web_Examination.Label.ExaminationStartDateFrom	hu-HU	Examination Start Date From
+WC_UI_Web_Examination.Label.ExaminationStartDateFrom	de-DE	Examination Start Date From
+WC_UI_Web_Examination.Label.ExaminationStartDateTo	de-DE	Examination Start Date To
+WC_UI_Web_Examination.Label.ExaminationStartDateTo	hu-HU	Examination Start Date To
+WC_UI_Web_Examination.Label.ExaminationStartDateTo	en-US	Examination Start Date To
+WC_UI_Web_Examination.Label.ExaminationTypeId	en-US	Examination Type
+WC_UI_Web_Home.Label.ExaminationType	en-US	Examination Type
+WC_UI_Web_Examination.Label.ExaminationTypeId	hu-HU	Examination Type
+WC_UI_Web_Home.Label.ExaminationType	hu-HU	Examination Type
+WC_UI_Web_Examination.Label.ExaminationTypeId	de-DE	Examination Type
+WC_UI_Web_Home.Label.ExaminationType	de-DE	Examination Type
+WC_PDF.Examination	en-US	Examination type
+WC_UI_Web_Examination.Label.ExaminationTypeInfoArray	de-DE	Examination Type Info
+WC_UI_Web_Examination.Label.ExaminationTypeInfoArray	hu-HU	Examination Type Info
+WC_UI_Web_Examination.Label.ExaminationTypeInfoArray	en-US	Examination Type Info
+WC_Group.Exception	hu-HU	Exception
+WC_Group.Exception	de-DE	Exception
+WC_Group.Exception	en-US	Exception
+WC_UI_Web_User.Label.FailedPasswordAttemptCount	en-US	Failed Password Attempt
+WC_UI_Web_User.Label.FailedPasswordAttemptCount	de-DE	Failed Password Attempt
+WC_UI_UWP_Pages.Results.FastButtonTooltip	en-US	Fast up the recording
+WC_UI_UWP_Pages.Results.FastButtonTooltip	de-DE	Fast up the recording
+WC_UI_UWP_Pages.Log.FatalDescription	de-DE	Fatal errors of the application.
+WC_UI_UWP_Pages.Log.FatalDescription	en-US	Fatal errors of the application.
+WC_UI_Web_HardwareUpdate.Label.Path	en-US	File Path
+WC_UI_Web_HardwareUpdate.Label.Path	hu-HU	File Path
+WC_UI_Web_HardwareUpdate.Label.Path	de-DE	File Path
+WC_UI_Web_Common.Label.FilterBy	de-DE	Filter By
+WC_UI_Web_Common.Label.FilterBy	en-US	Filter By
+WC_UI_Web_Common.Label.FilterGrid	en-US	Filter Grid
+WC_UI_Web_Common.Label.FilterGrid	de-DE	Filter Grid
+WC_UI_Web_Common.Label.FilterType	de-DE	Filter Type
+WC_UI_Web_Common.Label.FilterType	en-US	Filter Type
+WC_UI_Web_Common.Label.FilterType	hu-HU	Filter Type
+WC_UI_Web_Common.Button.Finish	en-US	Finish
+WC_UI_Web_Common.Button.Finish	de-DE	Finish
+WC_UI_Web_Common.Button.Finish	hu-HU	Finish
+WC_UI_Web_Hardware.AWB.FLASH	en-US	Flash
+WC_UI_Web_Hardware.AWB.FLASH	de-DE	Flash
+WC_UI_Web_Hardware.AWB.INCANDESCENT	de-DE	Fluorescent
+WC_UI_Web_Hardware.AWB.INCANDESCENT	en-US	Fluorescent
+WC_ExaminationType.FootPressureExam	en-US	Foot analysis
+WC_ExaminationType.FootPressureExam	de-DE	Foot analysis
+WC_UI_Web_Home.Label.FootPressureExam	de-DE	Foot Pressure Exam
+WC_UI_Web_Home.Label.FootPressureExam	hu-HU	Foot Pressure Exam
+WC_UI_Web_Home.Label.FootPressureExam	en-US	Foot Pressure Exam
+WC_UI_UWP_Pages.FAE.Title	en-US	Frequently applied expressions
+WC_UI_UWP_Pages.FAE.Title	de-DE	Frequently applied expressions
+WC_UI_UWP_Pages.CalibrationItemControl.GradientTooltip	de-DE	Friendly color array count of the selected body point and direction
+WC_UI_UWP_Pages.CalibrationItemControl.GradientTooltip	en-US	Friendly color array count of the selected body point and direction
+WC_UI_UWP_Pages.Diagnose.ImagePicker.FrontCamera	en-US	Front camera
+WC_UI_UWP_Pages.Diagnose.ImagePicker.FrontCamera	de-DE	Front camera
+WC_UI_Web_Hardware.CameraParameters.Gain	en-US	Gain
+WC_UI_Web_Hardware.CameraParameters.Gain	hu-HU	Gain
+WC_UI_Web_Hardware.CameraParameters.Gain	de-DE	Gain
+WC_ExaminationType.WalkingExam	de-DE	Gait analysis
+WC_UI_UWP_Menu.OnlineExamination	en-US	Gait analysis
+WC_UI_UWP_Pages.OnlineExamination.Title	en-US	Gait analysis
+WC_ExaminationType.WalkingExam	en-US	Gait analysis
+WC_BodyPart.General	de-DE	General
+WC_BodyPart.General	en-US	General
+WC_BodyPart.General	hu-HU	General
+WC_UI_UWP_Pages.Log.InformationDescription	en-US	General information of application events.
+WC_UI_UWP_Pages.Log.InformationDescription	de-DE	General information of application events.
+WC_Group.Globalization	hu-HU	Globalization
+WC_Group.Globalization	de-DE	Globalization
+WC_Group.Globalization	en-US	Globalization
+WC_UI_Web_Globalization.PageHeader.GlobalizationList	de-DE	Globalization List
+WC_UI_Web_Globalization.PageHeader.GlobalizationList	en-US	Globalization List
+WC_UI_Web_Common.Button.Go	hu-HU	Go
+WC_UI_Web_Common.Button.Go	en-US	Go
+WC_UI_Web_Common.Button.Go	de-DE	Go
+WC_Marker.Grey	en-US	Grey
+WC_Marker.Grey	de-DE	Grey
+WC_UI_Web_QueryOption.Label.Hardware	hu-HU	Hardware
+WC_UI_Web_QueryOption.Label.Hardware	en-US	Hardware
+WC_Group.Hardware	hu-HU	Hardware
+WC_Group.Hardware	de-DE	Hardware
+WC_Group.Hardware	en-US	Hardware
+WC_UI_Web_QueryOption.Label.Hardware	de-DE	Hardware
+WC_UI_Web_Hardware.PageHeader.HardwareDetails	de-DE	Hardware Details
+WC_UI_Web_Hardware.PageHeader.HardwareDetails	en-US	Hardware Details
+WC_UI_Web_Hardware.PageHeader.HardwareDetails	hu-HU	Hardware Details
+WC_UI_Web_Hardware.Label.HardwareId	hu-HU	Hardware Id
+WC_UI_Web_Examination.Label.HardwareId	hu-HU	Hardware Id
+WC_UI_Web_Hardware.Label.HardwareId	en-US	Hardware Id
+WC_UI_Web_Examination.Label.HardwareId	en-US	Hardware Id
+WC_UI_Web_Hardware.Label.HardwareId	de-DE	Hardware Id
+WC_UI_Web_Examination.Label.HardwareId	de-DE	Hardware Id
+WC_UI_Web_Examination.Label.HardwareInfoArray	de-DE	Hardware Info
+WC_UI_UWP_Pages.HardwareInfo.Title	de-DE	Hardware info
+WC_UI_UWP_Menu.Hardware	de-DE	Hardware info
+WC_UI_UWP_Pages.HardwareInfo.Title	en-US	Hardware info
+WC_UI_Web_Examination.Label.HardwareInfoArray	en-US	Hardware Info
+WC_UI_Web_Examination.Label.HardwareInfoArray	hu-HU	Hardware Info
+WC_UI_Web_Hardware.Label.HardwareName	en-US	Hardware Name
+WC_UI_Web_Hardware.Label.HardwareName	hu-HU	Hardware Name
+WC_UI_Web_Hardware.Label.HardwareName	de-DE	Hardware Name
+WC_UI_Web_Hardware.Label.HardwareType	en-US	Hardware Type
+WC_UI_Web_Hardware.Label.HardwareType	hu-HU	Hardware Type
+WC_UI_Web_Hardware.Label.HardwareType	de-DE	Hardware Type
+WC_Group.HardwareUpdate	de-DE	Hardware Update
+WC_Group.HardwareUpdate	en-US	Hardware Update
+WC_Group.HardwareUpdate	hu-HU	Hardware Update
+WC_UI_Web_HardwareUpdate.PageHeader.HardwareUpdateDetails	en-US	Hardware Update Details
+WC_UI_Web_HardwareUpdate.PageHeader.HardwareUpdateDetails	hu-HU	Hardware Update Details
+WC_UI_Web_HardwareUpdate.PageHeader.HardwareUpdateDetails	de-DE	Hardware Update Details
+WC_UI_Web_HardwareUpdate.Label.HardwareUpdateName	en-US	Hardware Update Name
+WC_UI_Web_HardwareUpdate.Label.HardwareUpdateName	hu-HU	Hardware Update Name
+WC_UI_Web_HardwareUpdate.Label.HardwareUpdateName	de-DE	Hardware Update Name
+WC_UI_Web_HardwareUpdate.Label.HardwareUpdateType	en-US	Hardware Update Type
+WC_UI_Web_HardwareUpdate.Label.HardwareUpdateType	hu-HU	Hardware Update Type
+WC_UI_Web_HardwareUpdate.Label.HardwareUpdateType	de-DE	Hardware Update Type
+WC_MenuContent.HardwareUpdates	de-DE	Hardware Updates
+WC_MenuContent.HardwareUpdates	en-US	Hardware Updates
+WC_MenuContent.HardwareUpdates	hu-HU	Hardware Updates
+WC_MenuContent.Hardwares	hu-HU	Hardwares
+WC_UI_Web_Header.Label.Hardwares	en-US	Hardwares
+WC_UI_Web_Home.Label.Hardwares	en-US	Hardwares
+WC_UI_Web_Header.Label.Hardwares	hu-HU	Hardwares
+WC_UI_Web_Home.Label.Hardwares	hu-HU	Hardwares
+WC_MenuContent.Hardwares	en-US	Hardwares
+WC_UI_Web_Header.Label.Hardwares	de-DE	Hardwares
+WC_UI_Web_Home.Label.Hardwares	de-DE	Hardwares
+WC_MenuContent.Hardwares	de-DE	Hardwares
+WC_UI_Web_Patient.Label.Height	de-DE	Height
+WC_UI_UWP_Pages.Patient.Height	en-US	Height
+WC_UI_Web_Patient.Label.Height	hu-HU	Height
+WC_UI_Web_Patient.Label.Height	en-US	Height
+WC_UI_Web_Header.Label.Hello	de-DE	Hello
+WC_UI_Web_Header.Label.Hello	en-US	Hello
+WC_UI_Web_Header.Label.Hello	hu-HU	Hello
+WC_UI_Web_Login.PageHeader.Hello	hu-HU	Hello!
+WC_UI_Web_Login.PageHeader.Hello	en-US	Hello!
+WC_UI_Web_Login.PageHeader.Hello	de-DE	Hello!
+WC_BodyPart.Hip	de-DE	Hip
+WC_BodyPart.Hip	en-US	Hip
+WC_Group.Home	en-US	Home
+WC_Group.Home	de-DE	Home
+WC_Group.Home	hu-HU	Home
+WC_UI_Web_Home.PageHeader.HomePage	en-US	Home Page
+WC_UI_Web_Home.PageHeader.HomePage	hu-HU	Home Page
+WC_UI_Web_Home.PageHeader.HomePage	de-DE	Home Page
+WC_UI_Web_Hardware.AWB.HORIZON	de-DE	Horizon
+WC_UI_Web_Hardware.AWB.HORIZON	en-US	Horizon
+WC_UI_Web_Common.Label.Hours	de-DE	Hours
+WC_UI_Web_Common.Label.Hours	hu-HU	Hours
+WC_UI_Web_Common.Label.Hours	en-US	Hours
+WC_PatientIdType.IdentityCard	en-US	Identity card
+WC_PatientIdType.IdentityCard	de-DE	Identity card
+WC_UI_Web_Hardware.Label.IdentityNumber	de-DE	Identity Number
+WC_UI_Web_Hardware.Label.IdentityNumber	en-US	Identity Number
+WC_UI_Web_Hardware.Label.IdentityNumber	hu-HU	Identity Number
+WC_UI_UWP_Pages.Diagnose.EnsureClose	de-DE	If you close this page, you cannot add body part specific diagnosis! Are you sure to close this property page?
+WC_UI_UWP_Pages.Diagnose.EnsureClose	en-US	If you close this page, you cannot add body part specific diagnosis! Are you sure to close this property page?
+WC_UI_UWP_Pages.CalibrationItemControl.ClearButtonTooltip	en-US	If you press this button, you can delete the friendly color array of the current body point.
+WC_UI_UWP_Pages.CalibrationItemControl.ClearButtonTooltip	de-DE	If you press this button, you can delete the friendly color array of the current body point.
+WC_UI_UWP_Pages.CalibrationItemControl.DiameterButtonTooltip	de-DE	If you press this button, you can set the diameter parameters of the current body point and direction.
+WC_UI_UWP_Pages.CalibrationItemControl.DiameterButtonTooltip	en-US	If you press this button, you can set the diameter parameters of the current body point and direction.
+WC_UI_UWP_Pages.CalibrationItemControl.FrameButtonTooltip	en-US	If you press this button, you can set the frame color of the current body point.
+WC_UI_UWP_Pages.CalibrationItemControl.FrameButtonTooltip	de-DE	If you press this button, you can set the frame color of the current body point.
+WC_UI_Web_Patient.Label.IllnessInfo	en-US	Illness Info
+WC_UI_Web_Patient.Label.IllnessInfo	hu-HU	Illness Info
+WC_UI_Web_Patient.Label.IllnessInfo	de-DE	Illness Info
+WC_MediaType.Image	en-US	Image
+WC_MediaType.Image	hu-HU	Image
+WC_UI_UWP_Pages.Examination.InitializeHardwares	de-DE	Initialising cameras and insoles
+WC_UI_UWP_Pages.Examination.InitializeHardwares	en-US	Initialising cameras and insoles
+WC_UI_UWP_Pages.Diagnose.ImagePicker.Insert	en-US	Insert
+WC_UI_Web_Common.Button.Insert	en-US	Insert
+WC_UI_UWP_Common.Label.Insert	en-US	Insert
+WC_UI_UWP_Pages.Diagnose.ImagePicker.Insert	de-DE	Insert
+WC_UI_Web_Common.Button.Insert	de-DE	Insert
+WC_UI_Web_Common.Button.InsertAndFinish	de-DE	Insert And Finish
+WC_UI_Web_Common.Button.InsertAndFinish	en-US	Insert And Finish
+WC_UI_Web_Common.Button.InsertAndFinish	hu-HU	Insert And Finish
+WC_HardwareType.Insole	en-US	Insole
+WC_HardwareUpdateType.Insole	en-US	Insole
+WC_HardwareUpdateType.Insole	de-DE	Insole
+WC_HardwareType.Insole	de-DE	Insole
+WC_UI_UWP_Pages.Examination.InsolePreparationError	de-DE	Insole error
+WC_UI_UWP_Pages.Examination.InsolePreparationError	en-US	Insole error
+WC_PatientIdType.HealthInsuranceCard	en-US	Insurance identifier
+WC_PatientIdType.HealthInsuranceCard	de-DE	Insurance identifier
+WC_UI_UWP_Login.Error.InvalidPassword	de-DE	Invalid password!
+WC_UI_UWP_Login.Error.InvalidPassword	en-US	Invalid password!
+WC_UI_UWP_Login.Error.InvalidUserName	en-US	Invalid user name!
+WC_UI_UWP_Login.Error.InvalidUserName	de-DE	Invalid user name!
+WC_UI_Web_User.Label.IsFix	en-US	Is Fix
+WC_UI_Web_User.Label.IsFix	de-DE	Is Fix
+WC_UI_Web_User.Label.Job	en-US	Job
+WC_UI_Web_User.Label.Job	de-DE	Job
+WC_BodyPart.Knee	de-DE	Knee
+WC_BodyPart.Knee	en-US	Knee
+WC_UI_Web_Home.Label.LastAnalysis	hu-HU	Last Analysis
+WC_UI_Web_Home.Label.LastAnalysis	en-US	Last Analysis
+WC_UI_Web_Home.Label.LastAnalysis	de-DE	Last Analysis
+WC_UI_Web_User.Label.LastLoginDate	de-DE	Last Login Date
+WC_UI_Web_User.Label.LastLoginDate	en-US	Last Login Date
+WC_UI_UWP_Pages.HardwareInfo.LastOnlineLabel	en-US	Last online:
+WC_UI_UWP_Pages.HardwareInfo.LastOnlineLabel	de-DE	Last online:
+WC_BodyPoint.LeftAnkle	en-US	Left ankle
+WC_BodyPoint.LeftHip	en-US	Left ankle
+WC_BodyPoint.LeftKnee	en-US	Left ankle
+WC_BodyPoint.RightAnkle	en-US	Left ankle
+WC_BodyPoint.RightKnee	en-US	Left ankle
+WC_BodyPoint.LeftAnkle	de-DE	Left ankle
+WC_BodyPoint.LeftHip	de-DE	Left ankle
+WC_BodyPoint.LeftKnee	de-DE	Left ankle
+WC_BodyPoint.RightKnee	de-DE	Left ankle
+WC_BodyPoint.RightAnkle	de-DE	Left ankle
+WC_UI_UWP_Pages.Diagnose.ImagePicker.LeftCamera	de-DE	Left camera
+WC_UI_UWP_Pages.Diagnose.ImagePicker.LeftCamera	en-US	Left camera
+WC_UI_UWP_Pages.Patient.LeftFootSize	en-US	Left foot size
+WC_UI_Web_Patient.Label.LeftFootSize	de-DE	Left Foot Size
+WC_UI_UWP_Pages.Patient.LeftFootSize	de-DE	Left foot size
+WC_UI_Web_Patient.Label.LeftFootSize	en-US	Left Foot Size
+WC_UI_Web_Patient.Label.LeftFootSize	hu-HU	Left Foot Size
+WC_UI_UWP_Pages.Diagnose.ImagePicker.LeftInsole	de-DE	Left insole
+WC_UI_UWP_Pages.Diagnose.ImagePicker.LeftInsole	en-US	Left insole
+WC_BodyPoint.LeftShoulder	en-US	Left shoulder
+WC_BodyPoint.LeftShoulder	de-DE	Left shoulder
+WC_UI_Web_Organization.FieldSet.License	hu-HU	License
+WC_Group.License	hu-HU	License
+WC_MenuContent.License	hu-HU	License
+WC_UI_Web_Organization.FieldSet.License	en-US	License
+WC_Group.License	de-DE	License
+WC_MenuContent.License	de-DE	License
+WC_Group.License	en-US	License
+WC_MenuContent.License	en-US	License
+WC_UI_Web_Organization.FieldSet.License	de-DE	License
+WC_UI_Web_License.PageHeader.LicenseDetails	de-DE	License Details
+WC_UI_Web_License.PageHeader.LicenseDetails	en-US	License Details
+WC_UI_Web_License.PageHeader.LicenseDetails	hu-HU	License Details
+WC_UI_Web_BodyPartProperty.PageHeader.ListOfBodyPartProperties	de-DE	List Of Body Part Properties
+WC_UI_Web_BodyPartProperty.PageHeader.ListOfBodyPartProperties	en-US	List Of Body Part Properties
+WC_UI_Web_BodyPartProperty.PageHeader.ListOfBodyPartProperties	hu-HU	List Of Body Part Properties
+WC_UI_Web_Examination.PageHeader.ListOfExaminations	hu-HU	List Of Examinations
+WC_UI_Web_Examination.PageHeader.ListOfExaminations	en-US	List Of Examinations
+WC_UI_Web_Examination.PageHeader.ListOfExaminations	de-DE	List Of Examinations
+WC_UI_Web_HardwareUpdate.PageHeader.ListOfHardwareUpdates	de-DE	List Of Hardware Updates
+WC_UI_Web_HardwareUpdate.PageHeader.ListOfHardwareUpdates	en-US	List Of Hardware Updates
+WC_Right.HardwareUpdate.ListOfHardwareUpdates	hu-HU	List Of Hardware Updates
+WC_UI_Web_HardwareUpdate.PageHeader.ListOfHardwareUpdates	hu-HU	List Of Hardware Updates
+WC_UI_Web_Hardware.PageHeader.ListOfHardwares	hu-HU	List Of Hardwares
+WC_Right.Hardware.ListOfHardwares	hu-HU	List Of Hardwares
+WC_UI_Web_Hardware.PageHeader.ListOfHardwares	en-US	List Of Hardwares
+WC_UI_Web_Hardware.PageHeader.ListOfHardwares	de-DE	List Of Hardwares
+WC_UI_Web_License.PageHeader.ListOfLicenses	de-DE	List Of Licenses
+WC_UI_Web_License.PageHeader.ListOfLicenses	en-US	List Of Licenses
+WC_UI_Web_License.PageHeader.ListOfLicenses	hu-HU	List Of Licenses
+WC_UI_UWP_Pages.Preparation.ExaminationTypeNecessaryDevices	en-US	List of necessary devices
+WC_UI_UWP_Pages.Preparation.ExaminationTypeNecessaryDevices	de-DE	List of necessary devices
+WC_UI_Web_Organization.PageHeader.ListOfOrganizations	de-DE	List Of Organizations
+WC_UI_Web_Organization.PageHeader.ListOfOrganizations	en-US	List Of Organizations
+WC_UI_Web_Patient.PageHeader.ListOfPatients	en-US	List Of Patients
+WC_UI_Web_Patient.PageHeader.ListOfPatients	hu-HU	List Of Patients
+WC_UI_Web_Patient.PageHeader.ListOfPatients	de-DE	List Of Patients
+WC_UI_Web_QueryOption.PageHeader.ListOfQueries	de-DE	List Of Queries
+WC_UI_Web_QueryOption.PageHeader.ListOfQueries	hu-HU	List Of Queries
+WC_UI_Web_QueryOption.PageHeader.ListOfQueries	en-US	List Of Queries
+WC_UI_Web_Role.PageHeader.ListOfRoles	en-US	List Of Roles
+WC_UI_Web_Role.PageHeader.ListOfRoles	de-DE	List Of Roles
+WC_UI_Web_User.PageHeader.ListOfUsers	de-DE	List Of Users
+WC_UI_Web_User.PageHeader.ListOfUsers	en-US	List Of Users
+WC_UI_Web_QueryOption.Button.LoadState	en-US	Load State
+WC_UI_Web_QueryOption.PageHeader.LoadState	en-US	Load state
+WC_UI_Web_QueryOption.PageHeader.LoadState	hu-HU	Load state
+WC_UI_Web_QueryOption.Button.LoadState	hu-HU	Load State
+WC_UI_Web_QueryOption.PageHeader.LoadState	de-DE	Load state
+WC_UI_Web_QueryOption.Button.LoadState	de-DE	Load State
+WC_UI_Web_Common.Button.LoadState	en-US	Load State
+WC_UI_Web_Common.Button.LoadState	de-DE	Load State
+WC_UI_Web_Header.Label.LockAccount	de-DE	Lock Account
+WC_UI_Web_Header.Label.LockAccount	hu-HU	Lock Account
+WC_UI_Web_Header.Label.LockAccount	en-US	Lock Account
+WC_UI_Web_User.Label.IsLockedOut	en-US	Locked Out
+WC_UI_Web_User.Label.IsLockedOut	de-DE	Locked Out
+WC_UI_Web_Common.GridActionButtons.IsLockedOut	en-US	Locked Out
+WC_UI_Web_Common.GridActionButtons.IsLockedOut	de-DE	Locked Out
+WC_UI_UWP_Menu.Log	de-DE	Log
+WC_UI_UWP_Pages.Log.Title	de-DE	Log
+WC_UI_UWP_Pages.Log.Title	en-US	Log
+WC_UI_UWP_Menu.Log	en-US	Log
+WC_UI_Web_Common.Button.Login	en-US	Login
+WC_UI_UWP_Login.Label.LoginButton	en-US	Login
+WC_UI_UWP_Login.Label.LoginText	en-US	Login
+WC_Group.Login	en-US	Login
+WC_CommonLogType.Authentication.Login	en-US	Login
+WC_Group.Login	de-DE	Login
+WC_UI_UWP_Login.Label.LoginButton	de-DE	Login
+WC_UI_UWP_Login.Label.LoginText	de-DE	Login
+WC_UI_Web_Common.Button.Login	de-DE	Login
+WC_Group.Login	hu-HU	Login
+WC_UI_Web_Header.Label.Logout	en-US	Logout
+WC_UI_Web_Header.Label.Logout	hu-HU	Logout
+WC_UI_UWP_Menu.Logout	de-DE	Logout
+WC_UI_UWP_Menu.LogoutDialog.Title	de-DE	Logout
+WC_CommonLogType.Authentication.Logout	en-US	Logout
+WC_UI_Web_Header.Label.Logout	de-DE	Logout
+WC_UI_UWP_Menu.Logout	en-US	Logout
+WC_UI_UWP_Menu.LogoutDialog.Title	en-US	Logout
+WC_UI_UWP_Menu.LogoutTooltip	en-US	Logout here
+WC_UI_UWP_Menu.LogoutTooltip	de-DE	Logout here
+WC_MenuContent.MainData	de-DE	Main Data
+WC_MenuContent.MainData	en-US	Main Data
+WC_Marker.Marker	en-US	Marker
+WC_Marker.Marker	de-DE	Marker
+WC_UI_UWP_Pages.Results.MarkerTitle	de-DE	Marker handling
+WC_UI_UWP_Pages.Results.MarkerTitle	en-US	Marker handling
+WC_UI_Web_Common.CompanyRelating.CompanyFullName	en-US	Master Move. Web Application
+WC_UI_Web_Common.CompanyRelating.CompanyFullName	de-DE	Master Move. Web Application
+WC_UI_Web_License.Label.MaxNumberOfUsers	hu-HU	Max Number Of Users
+WC_UI_Web_Organization.Label.MaxNumberOfUsers	hu-HU	Max Number Of Users
+WC_UI_Web_License.Label.MaxNumberOfUsers	en-US	Max Number Of Users
+WC_UI_Web_Organization.Label.MaxNumberOfUsers	en-US	Max Number Of Users
+WC_UI_Web_License.Label.MaxNumberOfUsers	de-DE	Max Number Of Users
+WC_UI_Web_Organization.Label.MaxNumberOfUsers	de-DE	Max Number Of Users
+WC_UI_UWP_Common.Label.Maximum	en-US	Maximum
+WC_UI_UWP_Common.Label.Maximum	de-DE	Maximum
+WC_UI_UWP_Common.Label.Maximum	hu-HU	Maximum
+WC_UI_UWP_Pages.DiameterDialog.MaxDiameter	de-DE	Maximum diameter factor:
+WC_UI_UWP_Pages.DiameterDialog.MaxDiameter	en-US	Maximum diameter factor:
+WC_UI_Web_Common.GridActionButtons.MeasureDeviceCalibration	en-US	Measure Device Calibration
+WC_UI_Web_Common.GridActionButtons.MeasureDeviceCalibration	de-DE	Measure Device Calibration
+WC_UI_Web_Common.GridActionButtons.MeasureDeviceCalibration	hu-HU	Measure Device Calibration
+WC_PatientIdType.MedicalCard	de-DE	Medical card ID
+WC_PatientIdType.MedicalCard	en-US	Medical card ID
+WC_UI_UWP_Common.Label.Minimum	hu-HU	Minimum
+WC_UI_UWP_Common.Label.Minimum	de-DE	Minimum
+WC_UI_UWP_Common.Label.Minimum	en-US	Minimum
+WC_UI_UWP_Pages.DiameterDialog.MinDiameter	en-US	Minimum diameter factor:
+WC_UI_UWP_Pages.DiameterDialog.MinDiameter	de-DE	Minimum diameter factor:
+WC_UI_Web_Common.Label.Minutes	de-DE	Minutes
+WC_UI_Web_Common.Label.Minutes	hu-HU	Minutes
+WC_UI_Web_Common.Label.Minutes	en-US	Minutes
+WC_UI_Web_Examination.Label.ModificationDate	en-US	Modification Date
+WC_UI_Web_Examination.Label.ModificationDate	hu-HU	Modification Date
+WC_UI_Web_Examination.Label.ModificationDate	de-DE	Modification Date
+WC_UI_Web_Examination.Label.ModificationDateFrom	de-DE	Modification Date From
+WC_UI_Web_Examination.Label.ModificationDateFrom	hu-HU	Modification Date From
+WC_UI_Web_Examination.Label.ModificationDateFrom	en-US	Modification Date From
+WC_UI_Web_Examination.Label.ModificationDateTo	en-US	Modification Date To
+WC_UI_Web_Examination.Label.ModificationDateTo	hu-HU	Modification Date To
+WC_UI_Web_Examination.Label.ModificationDateTo	de-DE	Modification Date To
+WC_UI_Web_Common.Label.Months	en-US	Months
+WC_UI_Web_Common.Label.Months	hu-HU	Months
+WC_UI_Web_Common.Label.Months	de-DE	Months
+WC_UI_Web_Home.Label.Name	hu-HU	Name
+WC_UI_Web_Home.Label.Name	en-US	Name
+WC_UI_Web_User.Label.Name	en-US	Name
+WC_UI_UWP_Pages.Patient.Name	de-DE	Name
+WC_UI_UWP_Pages.Patient.Name	en-US	Name
+WC_UI_Web_User.Label.Name	de-DE	Name
+WC_UI_Web_Home.Label.Name	de-DE	Name
+WC_UI_UWP_Pages.CalibrationNameDialog.NewTitle	en-US	New calibration name
+WC_UI_UWP_Pages.CalibrationNameDialog.NewTitle	de-DE	New calibration name
+WC_UI_Web_User.Label.NewPassword	de-DE	New Password
+WC_UI_Web_User.Label.NewPassword	en-US	New Password
+WC_UI_UWP_Common.Label.Next	en-US	Next
+WC_UI_UWP_Common.Label.Next	de-DE	Next
+WC_UI_UWP_Menu.LogoutDialog.NoSave	en-US	No save
+WC_UI_UWP_Menu.LogoutDialog.NoSave	de-DE	No save
+WC_UI_Web_Home.Label.Nodes	de-DE	Nodes
+WC_UI_Web_Home.Label.Nodes	hu-HU	Nodes
+WC_UI_Web_Home.Label.Nodes	en-US	Nodes
+WC_UI_Web_Role.Label.NotAssignedRights	en-US	Not Assigned Rights
+WC_UI_Web_Role.Label.NotAssignedRights	de-DE	Not Assigned Rights
+WC_UI_UWP_Pages.Patient.Undefined	en-US	Not specified
+WC_UI_UWP_Pages.Patient.Undefined	de-DE	Not specified
+WC_UI_Web_Home.Label.NumberOfColumns	de-DE	Number Of Columns
+WC_UI_Web_Home.Label.NumberOfColumns	en-US	Number Of Columns
+WC_UI_Web_Home.Label.NumberOfColumns	hu-HU	Number Of Columns
+WC_UI_UWP_Common.Label.OkText	en-US	Ok
+WC_UI_UWP_Common.Label.OkText	de-DE	Ok
+WC_UI_UWP_Common.Label.OkText	hu-HU	Ok
+WC_UI_Web_User.Label.OldPassword	en-US	Old Password
+WC_UI_Web_User.Label.OldPassword	de-DE	Old Password
+WC_ExaminationType.OnlineInsoleExam	en-US	Online Insole Exam
+WC_ExaminationType.OnlineInsoleExam	de-DE	Online Insole Exam
+WC_ExaminationType.OnlineInsoleExam	hu-HU	Online Insole Exam
+WC_UI_Web_Common.Button.OpenChartDialog	hu-HU	Open Chart Dialog
+WC_UI_Web_Common.Button.OpenChartDialog	de-DE	Open Chart Dialog
+WC_UI_Web_Common.Button.OpenChartDialog	en-US	Open Chart Dialog
+WC_Marker.Orange	en-US	Orange
+WC_UI_UWP_Common.Markers.Orange	en-US	Orange
+WC_Marker.Orange	de-DE	Orange
+WC_UI_UWP_Common.Markers.Orange	de-DE	Orange
+WC_UI_Web_Examination.Label.Organization	de-DE	Organization
+WC_UI_Web_Hardware.Label.Organization	de-DE	Organization
+WC_Group.Organization	de-DE	Organization
+WC_Group.Organization	en-US	Organization
+WC_UI_Web_QueryOption.Label.Organization	de-DE	Organization
+WC_UI_Web_License.Label.Organization	de-DE	Organization
+WC_UI_Web_Organization.FieldSet.Organization	de-DE	Organization
+WC_UI_UWP_Pages.Patient.RootOrganizationId	en-US	Organization
+WC_UI_Web_License.Label.Organization	hu-HU	Organization
+WC_UI_Web_QueryOption.Label.Organization	hu-HU	Organization
+WC_UI_Web_Hardware.Label.Organization	hu-HU	Organization
+WC_UI_Web_Examination.Label.Organization	hu-HU	Organization
+WC_Group.Organization	hu-HU	Organization
+WC_UI_Web_QueryOption.Label.Organization	en-US	Organization
+WC_UI_Web_Organization.FieldSet.Organization	en-US	Organization
+WC_UI_Web_License.Label.Organization	en-US	Organization
+WC_UI_Web_Hardware.Label.Organization	en-US	Organization
+WC_UI_Web_Examination.Label.Organization	en-US	Organization
+WC_UI_Web_Organization.PageHeader.OrganizationDetails	de-DE	Organization Details
+WC_UI_Web_Organization.PageHeader.OrganizationDetails	en-US	Organization Details
+WC_UI_Web_Home.Label.OrganizationInformation	en-US	Organization Information
+WC_UI_Web_Home.Label.OrganizationInformation	hu-HU	Organization Information
+WC_UI_Web_Home.Label.OrganizationInformation	de-DE	Organization Information
+WC_UI_Web_Hardware.Label.OrganizationLocation	de-DE	Organization Location
+WC_UI_Web_Examination.Label.OrganizationLocationId	de-DE	Organization Location
+WC_UI_Web_Examination.Label.OrganizationLocationId	hu-HU	Organization Location
+WC_UI_Web_Hardware.Label.OrganizationLocation	hu-HU	Organization Location
+WC_UI_Web_Examination.Label.OrganizationLocationId	en-US	Organization Location
+WC_UI_Web_Hardware.Label.OrganizationLocation	en-US	Organization Location
+WC_UI_Web_Organization.Label.OrganizationName	en-US	Organization Name
+WC_UI_Web_Organization.Label.OrganizationName	de-DE	Organization Name
+WC_UI_Web_Examination.Label.OrganizationUserId	en-US	Organization User
+WC_UI_Web_Examination.Label.OrganizationUserId	hu-HU	Organization User
+WC_UI_Web_Examination.Label.OrganizationUserId	de-DE	Organization User
+WC_UI_Web_Examination.Label.OrganizationUserFullName	de-DE	Organization User Fullname
+WC_UI_Web_Examination.Label.OrganizationUserFullName	hu-HU	Organization User Fullname
+WC_UI_Web_Examination.Label.OrganizationUserFullName	en-US	Organization User Fullname
+WC_UI_Web_Examination.Label.OrganizationUsername	en-US	Organization Username
+WC_UI_Web_Examination.Label.OrganizationUsername	hu-HU	Organization Username
+WC_UI_Web_Examination.Label.OrganizationUsername	de-DE	Organization Username
+WC_MenuContent.Organizations	de-DE	Organizations
+WC_UI_Web_Header.Label.Organizations	de-DE	Organizations
+WC_MenuContent.Organizations	en-US	Organizations
+WC_UI_Web_Header.Label.Organizations	hu-HU	Organizations
+WC_UI_Web_Header.Label.Organizations	en-US	Organizations
+WC_MenuContent.Organizations	hu-HU	Organizations
+WC_UI_UWP_Menu.DiagnoseTooltip	en-US	Page for editing the diagnose and share the final result
+WC_UI_UWP_Menu.DiagnoseTooltip	de-DE	Page for editing the diagnose and share the final result
+WC_UI_Web_Header.Label.Paitients	de-DE	Paitients
+WC_UI_Web_Header.Label.Paitients	en-US	Paitients
+WC_UI_Web_Header.Label.Paitients	hu-HU	Paitients
+WC_Api_Message.ParameterIsNull	hu-HU	Parameter Is Null
+WC_Api_Message.ParameterIsNull	en-US	Parameter Is Null
+WC_Api_Message.ParameterIsNull	de-DE	Parameter Is Null
+WC_PatientIdType.Passport	de-DE	Passport ID
+WC_PatientIdType.Passport	en-US	Passport ID
+WC_UI_UWP_Login.Label.Password	en-US	Password
+WC_UI_Web_Login.Labels.Password	de-DE	Password
+WC_UI_Web_Organization.Label.Password	de-DE	Password
+WC_UI_Web_User.Label.Password	de-DE	Password
+WC_UI_UWP_Login.Label.Password	de-DE	Password
+WC_UI_Web_Organization.Label.Password	en-US	Password
+WC_UI_Web_Login.Labels.Password	en-US	Password
+WC_UI_Web_User.Label.Password	en-US	Password
+WC_UI_Web_Organization.Label.Password	hu-HU	Password
+WC_UI_Web_QueryOption.Label.Patient	hu-HU	Patient
+WC_UI_Web_QueryOption.Label.Patient	en-US	Patient
+WC_Group.Patient	hu-HU	Patient
+WC_Group.Patient	de-DE	Patient
+WC_UI_UWP_Menu.Patient	de-DE	Patient
+WC_UI_Web_QueryOption.Label.Patient	de-DE	Patient
+WC_Group.Patient	en-US	Patient
+WC_UI_UWP_Menu.Patient	en-US	Patient
+WC_PDF.PatientAge	en-US	Patient age
+WC_UI_Web_Examination.Label.PatientAge	de-DE	Patient Age
+WC_UI_Web_Examination.Label.PatientAge	en-US	Patient Age
+WC_UI_Web_Examination.Label.PatientAge	hu-HU	Patient Age
+WC_UI_Web_Examination.Label.PatientAgeFrom	hu-HU	Patient Age From
+WC_UI_Web_Examination.Label.PatientAgeFrom	en-US	Patient Age From
+WC_UI_Web_Examination.Label.PatientAgeFrom	de-DE	Patient Age From
+WC_UI_Web_Examination.Label.PatientAgeTo	de-DE	Patient Age To
+WC_UI_Web_Examination.Label.PatientAgeTo	en-US	Patient Age To
+WC_UI_Web_Examination.Label.PatientAgeTo	hu-HU	Patient Age To
+WC_UI_Web_Patient.PageHeader.PatientDetails	de-DE	Patient Details
+WC_UI_Web_Patient.PageHeader.PatientDetails	hu-HU	Patient Details
+WC_UI_Web_Patient.PageHeader.PatientDetails	en-US	Patient Details
+WC_UI_Web_Examination.Label.PatientEmail	en-US	Patient Email
+WC_UI_Web_Examination.Label.PatientEmail	hu-HU	Patient Email
+WC_UI_Web_Examination.Label.PatientEmail	de-DE	Patient Email
+WC_PDF.PatientHeight	en-US	Patient height
+WC_UI_Web_Examination.Label.PatientHeight	de-DE	Patient Height
+WC_UI_Web_Examination.Label.PatientHeight	hu-HU	Patient Height
+WC_UI_Web_Examination.Label.PatientHeight	en-US	Patient Height
+WC_UI_Web_Examination.Label.PatientHeightFrom	en-US	Patient Height From
+WC_UI_Web_Examination.Label.PatientHeightFrom	hu-HU	Patient Height From
+WC_UI_Web_Examination.Label.PatientHeightFrom	de-DE	Patient Height From
+WC_UI_Web_Examination.Label.PatientHeightTo	de-DE	Patient Height To
+WC_UI_Web_Examination.Label.PatientHeightTo	hu-HU	Patient Height To
+WC_UI_Web_Examination.Label.PatientHeightTo	en-US	Patient Height To
+WC_UI_Web_Examination.Label.PatientId	en-US	Patient Id
+WC_UI_Web_Patient.Label.PatientId	en-US	Patient Id
+WC_UI_Web_Examination.Label.PatientId	hu-HU	Patient Id
+WC_UI_Web_Patient.Label.PatientId	hu-HU	Patient Id
+WC_UI_Web_Examination.Label.PatientId	de-DE	Patient Id
+WC_UI_Web_Patient.Label.PatientId	de-DE	Patient Id
+WC_UI_Web_Patient.Label.PatientIdType	de-DE	Patient Id Type
+WC_UI_Web_Examination.Label.PatientIdTypeId	de-DE	Patient Id Type
+WC_UI_Web_Patient.Label.PatientIdType	hu-HU	Patient Id Type
+WC_UI_Web_Examination.Label.PatientIdTypeId	hu-HU	Patient Id Type
+WC_UI_Web_Patient.Label.PatientIdType	en-US	Patient Id Type
+WC_UI_Web_Examination.Label.PatientIdTypeId	en-US	Patient Id Type
+WC_UI_Web_Examination.Label.PatientIdentifier	en-US	Patient Identifier
+WC_UI_Web_Examination.Label.PatientIdentifier	hu-HU	Patient Identifier
+WC_UI_Web_Examination.Label.PatientIdentifier	de-DE	Patient Identifier
+WC_UI_Web_Examination.Label.PatientLeftFootSize	de-DE	Patient Left Foot Size
+WC_UI_Web_Examination.Label.PatientLeftFootSize	hu-HU	Patient Left Foot Size
+WC_UI_Web_Examination.Label.PatientLeftFootSize	en-US	Patient Left Foot Size
+WC_UI_Web_Examination.Label.PatientLeftFootSizeFrom	en-US	Patient Left Foot Size From
+WC_UI_Web_Examination.Label.PatientLeftFootSizeFrom	hu-HU	Patient Left Foot Size From
+WC_UI_Web_Examination.Label.PatientLeftFootSizeFrom	de-DE	Patient Left Foot Size From
+WC_UI_Web_Examination.Label.PatientLeftFootSizeTo	de-DE	Patient Left Foot Size To
+WC_UI_Web_Examination.Label.PatientLeftFootSizeTo	hu-HU	Patient Left Foot Size To
+WC_UI_Web_Examination.Label.PatientLeftFootSizeTo	en-US	Patient Left Foot Size To
+WC_UI_Web_Examination.Label.PatientName	en-US	Patient Name
+WC_UI_Web_Patient.Label.PatientName	en-US	Patient Name
+WC_UI_Web_Home.Label.PatientName	en-US	Patient Name
+WC_UI_Web_Examination.Label.PatientName	hu-HU	Patient Name
+WC_UI_Web_Patient.Label.PatientName	hu-HU	Patient Name
+WC_UI_Web_Home.Label.PatientName	hu-HU	Patient Name
+WC_UI_Web_Examination.Label.PatientName	de-DE	Patient Name
+WC_PDF.PatientName	en-US	Patient name
+WC_UI_Web_Patient.Label.PatientName	de-DE	Patient Name
+WC_UI_Web_Home.Label.PatientName	de-DE	Patient Name
+WC_UI_Web_Examination.Label.PatientRightFootSize	de-DE	Patient Right Foot Size
+WC_UI_Web_Examination.Label.PatientRightFootSize	hu-HU	Patient Right Foot Size
+WC_UI_Web_Examination.Label.PatientRightFootSize	en-US	Patient Right Foot Size
+WC_UI_Web_Examination.Label.PatientRightFootSizeFrom	en-US	Patient Right Foot Size From
+WC_UI_Web_Examination.Label.PatientRightFootSizeFrom	hu-HU	Patient Right Foot Size From
+WC_UI_Web_Examination.Label.PatientRightFootSizeFrom	de-DE	Patient Right Foot Size From
+WC_UI_Web_Examination.Label.PatientRightFootSizeTo	de-DE	Patient Right Foot Size To
+WC_UI_Web_Examination.Label.PatientRightFootSizeTo	hu-HU	Patient Right Foot Size To
+WC_UI_Web_Examination.Label.PatientRightFootSizeTo	en-US	Patient Right Foot Size To
+WC_UI_Web_Examination.Label.PatientWeight	en-US	Patient Weight
+WC_UI_Web_Examination.Label.PatientWeight	hu-HU	Patient Weight
+WC_UI_Web_Examination.Label.PatientWeight	de-DE	Patient Weight
+WC_UI_Web_Examination.Label.PatientWeightFrom	de-DE	Patient Weight From
+WC_UI_Web_Examination.Label.PatientWeightFrom	hu-HU	Patient Weight From
+WC_UI_Web_Examination.Label.PatientWeightFrom	en-US	Patient Weight From
+WC_UI_Web_Examination.Label.PatientWeightTo	en-US	Patient Weight To
+WC_UI_Web_Examination.Label.PatientWeightTo	hu-HU	Patient Weight To
+WC_UI_Web_Examination.Label.PatientWeightTo	de-DE	Patient Weight To
+WC_MenuContent.Patients	de-DE	Patients
+WC_UI_Web_Home.Label.Patients	de-DE	Patients
+WC_MenuContent.Patients	en-US	Patients
+WC_UI_Web_Home.Label.Patients	hu-HU	Patients
+WC_UI_Web_Home.Label.Patients	en-US	Patients
+WC_MenuContent.Patients	hu-HU	Patients
+WC_MediaType.PDF	hu-HU	PDF
+WC_MediaType.PDF	en-US	PDF
+WC_UI_Web_Common.Label.Period	de-DE	Period
+WC_UI_Web_Common.Label.Period	en-US	Period
+WC_UI_Web_Common.Label.Period	hu-HU	Period
+WC_UI_UWP_Pages.Patient.Phone	en-US	Phone
+WC_UI_Web_Patient.Label.Phone	de-DE	Phone
+WC_UI_Web_User.Label.Phone	de-DE	Phone
+WC_UI_Web_Patient.Label.Phone	hu-HU	Phone
+WC_UI_Web_Patient.Label.Phone	en-US	Phone
+WC_UI_Web_User.Label.Phone	en-US	Phone
+WC_Marker.Pink	hu-HU	Pink
+WC_UI_UWP_Common.Markers.Pink	hu-HU	Pink
+WC_UI_UWP_Common.Markers.Pink	en-US	Pink
+WC_Marker.Pink	en-US	Pink
+WC_UI_UWP_Common.Markers.Pink	de-DE	Pink
+WC_Marker.Pink	de-DE	Pink
+WC_UI_UWP_Pages.Results.PlayButtonTooltip	en-US	Plays the recording
+WC_UI_UWP_Pages.Results.PlayButtonTooltip	de-DE	Plays the recording
+WC_UI_UWP_Pages.HardwareInfo.SelectHardware	de-DE	Please associate the appropriate hardware to the direction!
+WC_UI_UWP_Pages.HardwareInfo.SelectHardware	en-US	Please associate the appropriate hardware to the direction!
+WC_UI_UWP_Pages.FAE.Lead	en-US	Please choose your favourite expression to insert!
+WC_UI_UWP_Pages.FAE.Lead	de-DE	Please choose your favourite expression to insert!
+WC_UI_UWP_Pages.MarkerDialog.Lead	de-DE	Please define the color of the selected body part!
+WC_UI_UWP_Pages.MarkerDialog.Lead	en-US	Please define the color of the selected body part!
+WC_UI_UWP_Pages.Patient.AddPatient	en-US	Please define the new patient personal data!
+WC_UI_UWP_Pages.Patient.AddPatient	de-DE	Please define the new patient personal data!
+WC_UI_UWP_Pages.Patient.EditPatient	de-DE	Please define the patient personal data!
+WC_UI_UWP_Pages.Patient.EditPatient	en-US	Please define the patient personal data!
+WC_UI_Web_BodyPartProperty.Label.Lead	en-US	Please describe the diagnosis of this body part.
+WC_UI_Web_BodyPartProperty.Label.Lead	de-DE	Please describe the diagnosis of this body part.
+WC_UI_UWP_Pages.Calibration.SelectBodyPoint	de-DE	Please select a body point from the list!
+WC_UI_UWP_Pages.Calibration.SelectBodyPoint	en-US	Please select a body point from the list!
+WC_UI_UWP_Pages.MarkerDialog.SelectCorrection	en-US	Please select a correction if necessary!
+WC_UI_UWP_Pages.MarkerDialog.SelectCorrection	de-DE	Please select a correction if necessary!
+WC_UI_UWP_Pages.MarkerDialog.SelectMarker	de-DE	Please select a marker!
+WC_UI_UWP_Pages.MarkerDialog.SelectMarker	en-US	Please select a marker!
+WC_UI_UWP_Pages.Welcome.Lead	en-US	Please select the desired function for prepare and run the analysis
+WC_UI_UWP_Pages.Welcome.ToolTip	en-US	Please select the desired function for prepare and run the analysis
+WC_UI_UWP_Pages.Welcome.ToolTip	de-DE	Please select the desired function for prepare and run the analysis
+WC_UI_UWP_Pages.Welcome.Lead	de-DE	Please select the desired function for prepare and run the analysis
+WC_UI_Web_Hardware.CameraParameters.Lead	de-DE	Please specify the camera parameters!
+WC_UI_Web_Hardware.CameraParameters.Lead	en-US	Please specify the camera parameters!
+WC_UI_UWP_Menu.Preparation	de-DE	Preparation
+WC_UI_UWP_Pages.Examination.Preparation	de-DE	Preparation
+WC_UI_UWP_Pages.Preparation.Title	en-US	Preparation
+WC_UI_UWP_Menu.Preparation	en-US	Preparation
+WC_UI_UWP_Pages.Examination.Preparation	en-US	Preparation
+WC_UI_UWP_Pages.Examination.Lead	en-US	Pressing the button you can start the analysis.
+WC_UI_UWP_Pages.Examination.ToolTip	en-US	Pressing the button you can start the analysis.
+WC_UI_UWP_Pages.Examination.Lead	de-DE	Pressing the button you can start the analysis.
+WC_UI_UWP_Pages.Examination.ToolTip	de-DE	Pressing the button you can start the analysis.
+WC_UI_UWP_Common.Label.Prev	de-DE	Previous
+WC_UI_UWP_Common.Label.Prev	en-US	Previous
+WC_UI_Web_Common.GridActionButtons.Processing	hu-HU	Processing
+WC_UI_Web_Common.GridActionButtons.Processing	de-DE	Processing
+WC_UI_Web_Common.GridActionButtons.Processing	en-US	Processing
+WC_UI_Web_Header.Label.Profile	de-DE	Profile
+WC_UI_Web_Header.Label.Profile	hu-HU	Profile
+WC_UI_Web_Header.Label.Profile	en-US	Profile
+WC_UI_UWP_Pages.CalibrationItemControl.Title	en-US	Properties of the selected body point and direction
+WC_UI_UWP_Pages.CalibrationItemControl.Title	de-DE	Properties of the selected body point and direction
+WC_UI_UWP_Common.Markers.Purple	de-DE	Purple
+WC_Marker.Purple	de-DE	Purple
+WC_UI_UWP_Common.Markers.Purple	en-US	Purple
+WC_Marker.Purple	en-US	Purple
+WC_Group.QueryOption	en-US	Query Option
+WC_Group.QueryOption	de-DE	Query Option
+WC_Group.QueryOption	hu-HU	Query Option
+WC_UI_Web_QueryOption.PageHeader.QueryOptionDetails	en-US	Query Option Details
+WC_UI_Web_QueryOption.PageHeader.QueryOptionDetails	hu-HU	Query Option Details
+WC_UI_Web_QueryOption.PageHeader.QueryOptionDetails	de-DE	Query Option Details
+WC_UI_Web_QueryOption.Label.QueryOptionName	en-US	Query Option Name
+WC_UI_Web_QueryOption.Label.QueryOptionName	hu-HU	Query Option Name
+WC_UI_Web_QueryOption.Label.QueryOptionName	de-DE	Query Option Name
+WC_UI_UWP_Pages.Diagnose.ImagePicker.Quit	en-US	Quit
+WC_UI_UWP_Pages.Diagnose.ImagePicker.Quit	de-DE	Quit
+WC_UI_Web_Common.GridActionButtons.ReadRecord	en-US	Read Record
+WC_UI_Web_Common.GridActionButtons.ReadRecord	de-DE	Read Record
+WC_UI_UWP_Pages.Examination.Recording	en-US	Recording...
+WC_UI_UWP_Pages.Examination.Recording	de-DE	Recording...
+WC_UI_Web_Login.Message.Redirecting	de-DE	Redirecting, Please wait ...
+WC_UI_Web_Login.Message.Redirecting	en-US	Redirecting, Please wait ...
+WC_UI_UWP_Common.Label.Refresh	en-US	Refresh
+WC_UI_UWP_Common.Label.Refresh	de-DE	Refresh
+WC_UI_Web_Organization.PageHeader.RegisterNewOrganization	hu-HU	Register New Organization
+WC_UI_Web_Organization.PageHeader.RegisterNewOrganization	en-US	Register New Organization
+WC_UI_Web_Organization.PageHeader.RegisterNewOrganization	de-DE	Register New Organization
+WC_MenuContent.Organizations.RegisterOrganizations	hu-HU	Register Organizations
+WC_MenuContent.Organizations.RegisterOrganizations	en-US	Register Organizations
+WC_MenuContent.Organizations.RegisterOrganizations	de-DE	Register Organizations
+WC_UI_Web_Common.Button.ReloadChart	de-DE	Reload Chart
+WC_UI_Web_Common.Button.ReloadChart	en-US	Reload Chart
+WC_UI_Web_Common.Button.ReloadChart	hu-HU	Reload Chart
+WC_UI_UWP_Pages.Calibration.RenameButtonTooltip	en-US	Renames the currently selected calibration
+WC_UI_UWP_Pages.Calibration.RenameButtonTooltip	de-DE	Renames the currently selected calibration
+WC_UI_UWP_Menu.Results	de-DE	Results
+WC_UI_UWP_Pages.Results.Title	de-DE	Results
+WC_UI_UWP_Menu.Results	en-US	Results
+WC_UI_UWP_Pages.Results.Title	en-US	Results
+WC_UI_Web_Common.Button.ReturnToList	en-US	Return To List
+WC_UI_Web_Common.Button.ReturnToList	de-DE	Return To List
+WC_UI_Web_Role.PageHeader.RightAssignment	de-DE	Right Assignment
+WC_UI_Web_Examination.PageHeader.RightAssignment	de-DE	Right Assignment
+WC_UI_Web_Role.PageHeader.RightAssignment	en-US	Right Assignment
+WC_UI_Web_Examination.PageHeader.RightAssignment	en-US	Right Assignment
+WC_UI_Web_Examination.PageHeader.RightAssignment	hu-HU	Right Assignment
+WC_UI_Web_Role.Label.RoleRights	en-US	Right belogns to the role
+WC_UI_Web_Role.Label.RoleRights	de-DE	Right belogns to the role
+WC_UI_UWP_Pages.Diagnose.ImagePicker.RightCamera	en-US	Right camera
+WC_UI_UWP_Pages.Diagnose.ImagePicker.RightCamera	de-DE	Right camera
+WC_UI_UWP_Pages.Patient.RightFootSize	de-DE	Right foot size
+WC_UI_UWP_Pages.Patient.RightFootSize	en-US	Right foot size
+WC_UI_Web_Patient.Label.RightFootSize	de-DE	Right Foot Size
+WC_UI_Web_Patient.Label.RightFootSize	en-US	Right Foot Size
+WC_UI_Web_Patient.Label.RightFootSize	hu-HU	Right Foot Size
+WC_BodyPoint.RightHip	en-US	Right hip
+WC_BodyPoint.RightHip	de-DE	Right hip
+WC_UI_UWP_Pages.Diagnose.ImagePicker.RightInsole	de-DE	Right insole
+WC_UI_UWP_Pages.Diagnose.ImagePicker.RightInsole	en-US	Right insole
+WC_BodyPoint.RightShoulder	en-US	Right shoulder
+WC_BodyPoint.RightShoulder	de-DE	Right shoulder
+WC_Group.Role	de-DE	Role
+WC_Group.Role	en-US	Role
+WC_Group.Role	hu-HU	Role
+WC_UI_Web_Role.PageHeader.RoleDetails	en-US	Role Details
+WC_UI_Web_Role.PageHeader.RoleDetails	de-DE	Role Details
+WC_UI_Web_Role.Label.RoleName	de-DE	Role Name
+WC_UI_Web_Role.Label.RoleName	en-US	Role Name
+WC_MenuContent.AccountManagement.Roles	en-US	Roles
+WC_MenuContent.AccountManagement.Roles	de-DE	Roles
+WC_MediaType.RTF	hu-HU	RTF
+WC_MediaType.RTF	en-US	RTF
+WC_UI_Web_Hardware.CameraParameters.Saturation	en-US	Saturation
+WC_UI_Web_Hardware.CameraParameters.Saturation	de-DE	Saturation
+WC_UI_UWP_Menu.LogoutDialog.Save	de-DE	Save
+WC_UI_Web_Home.Button.Save	de-DE	Save
+WC_UI_UWP_Menu.LogoutDialog.Save	en-US	Save
+WC_UI_Web_Home.Button.Save	en-US	Save
+WC_UI_Web_Home.Button.Save	hu-HU	Save
+WC_UI_Web_QueryOption.PageHeader.SaveANewState	hu-HU	Save a new state
+WC_UI_Web_QueryOption.PageHeader.SaveANewState	en-US	Save a new state
+WC_UI_Web_QueryOption.PageHeader.SaveANewState	de-DE	Save a new state
+WC_UI_UWP_Pages.Calibration.ApplyButtonTooltip	en-US	Saves all changes on the current calibration
+WC_UI_UWP_Pages.Calibration.ApplyButtonTooltip	de-DE	Saves all changes on the current calibration
+WC_UI_Web_Common.Button.Search	de-DE	Search
+WC_UI_Web_Common.Button.Search	en-US	Search
+WC_UI_Web_Common.SelectChooseCaption.SelectRole	de-DE	Select a role
+WC_UI_Web_Common.SelectChooseCaption.SelectRole	en-US	Select a role
+WC_UI_Web_Common.SelectChooseCaption.SelectUser	en-US	Select a user
+WC_UI_Web_Common.SelectChooseCaption.SelectUser	de-DE	Select a user
+WC_UI_Web_Common.SelectChooseCaption.SelectUserType	de-DE	Select a user type
+WC_UI_Web_Common.SelectChooseCaption.SelectUserType	en-US	Select a user type
+WC_UI_Web_Common.SelectChooseCaption.SelectAll	en-US	Select All
+WC_UI_Web_Common.SelectChooseCaption.SelectAll	de-DE	Select All
+WC_UI_Web_Common.SelectChooseCaption.SelectCalibration	de-DE	Select Calibration
+WC_UI_Web_Common.SelectChooseCaption.SelectCalibration	en-US	Select Calibration
+WC_UI_Web_Common.SelectChooseCaption.SelectCalibration	hu-HU	Select Calibration
+WC_UI_Web_Common.SelectChooseCaption.SelectExaminationType	hu-HU	Select Examination Type
+WC_UI_Web_Common.SelectChooseCaption.SelectExaminationType	en-US	Select Examination Type
+WC_UI_Web_Common.SelectChooseCaption.SelectExaminationType	de-DE	Select Examination Type
+WC_UI_Web_Common.SelectChooseCaption.SelectHardware	de-DE	Select Hardware
+WC_UI_Web_Common.SelectChooseCaption.SelectHardware	en-US	Select Hardware
+WC_UI_Web_Common.SelectChooseCaption.SelectHardware	hu-HU	Select Hardware
+WC_UI_Web_Common.SelectChooseCaption.SelectHardwareType	hu-HU	Select Hardware Type
+WC_UI_Web_Common.SelectChooseCaption.SelectHardwareType	en-US	Select Hardware Type
+WC_UI_Web_Common.SelectChooseCaption.SelectHardwareType	de-DE	Select Hardware Type
+WC_UI_Web_Header.Label.SelectLanguage	de-DE	Select Language
+WC_UI_Web_Header.Label.SelectLanguage	en-US	Select Language
+WC_UI_Web_Header.Label.SelectLanguage	hu-HU	Select Language
+WC_UI_UWP_Pages.MarkerDialog.Title	en-US	Select marker
+WC_UI_UWP_Pages.MarkerDialog.Title	de-DE	Select marker
+WC_UI_Web_Common.SelectChooseCaption.SelectOrganization	de-DE	Select Organization
+WC_UI_Web_Common.SelectChooseCaption.SelectOrganization	hu-HU	Select Organization
+WC_UI_Web_Common.SelectChooseCaption.SelectOrganization	en-US	Select Organization
+WC_UI_Web_Common.SelectChooseCaption.SelectOrganizationLocation	en-US	Select Organization Location
+WC_UI_Web_Common.SelectChooseCaption.SelectOrganizationLocation	hu-HU	Select Organization Location
+WC_UI_Web_Common.SelectChooseCaption.SelectOrganizationLocation	de-DE	Select Organization Location
+WC_UI_Web_Common.SelectChooseCaption.SelectPatientIdType	de-DE	Select Patient Id Type
+WC_UI_Web_Common.SelectChooseCaption.SelectPatientIdType	hu-HU	Select Patient Id Type
+WC_UI_Web_Common.SelectChooseCaption.SelectPatientIdType	en-US	Select Patient Id Type
+WC_UI_Web_Common.SelectChooseCaption.SelectPatientType	en-US	Select Patient Type
+WC_UI_Web_Common.SelectChooseCaption.SelectPatientType	hu-HU	Select Patient Type
+WC_UI_Web_Common.SelectChooseCaption.SelectPatientType	de-DE	Select Patient Type
+WC_UI_Web_Common.SelectChooseCaption.SelectSavedStates	de-DE	Select Saved States
+WC_UI_Web_Common.SelectChooseCaption.SelectSavedStates	hu-HU	Select Saved States
+WC_UI_Web_Common.SelectChooseCaption.SelectSavedStates	en-US	Select Saved States
+WC_UI_Web_Common.SelectChooseCaption.SelectTimeType	en-US	Select Time Type
+WC_UI_Web_Common.SelectChooseCaption.SelectTimeType	hu-HU	Select Time Type
+WC_UI_Web_Common.SelectChooseCaption.SelectTimeType	de-DE	Select Time Type
+WC_UI_Web_Common.SelectChooseCaption.SelectWebMenu	de-DE	Select Web Menu
+WC_UI_Web_Common.SelectChooseCaption.SelectWebMenu	hu-HU	Select Web Menu
+WC_UI_Web_Common.SelectChooseCaption.SelectWebMenu	en-US	Select Web Menu
+WC_UI_UWP_Pages.Examination.Label.Calibration	de-DE	Selected calibration:
+WC_UI_UWP_Pages.Examination.Label.Calibration	en-US	Selected calibration:
+WC_UI_UWP_Pages.Examination.Label.ExaminationType	en-US	Selected examination type:
+WC_UI_UWP_Pages.Examination.Label.ExaminationType	de-DE	Selected examination type:
+WC_UI_UWP_Pages.Patient.SelectionLog	de-DE	Selected patient for analysis:
+WC_UI_UWP_Pages.Patient.SelectionLog	en-US	Selected patient for analysis:
+WC_UI_UWP_Pages.Examination.Label.Patient	en-US	Selected patient:
+WC_UI_UWP_Pages.Examination.Label.Patient	de-DE	Selected patient:
+WC_UI_UWP_Pages.Calibration.ModeTooltip_DiameterAvg	de-DE	Selection mode for defining average diameter of the sphere blongs to the body parts
+WC_UI_UWP_Pages.Calibration.ModeTooltip_DiameterAvg	en-US	Selection mode for defining average diameter of the sphere blongs to the body parts
+WC_UI_UWP_Pages.Calibration.ModeTooltip_Rect	en-US	Selection mode for defining bounding rectangle for body part sphere
+WC_UI_UWP_Pages.Calibration.ModeTooltip_Rect	de-DE	Selection mode for defining bounding rectangle for body part sphere
+WC_UI_UWP_Pages.Calibration.ModeTooltip_DiameterMax	de-DE	Selection mode for defining closest (maximum) diameter of the sphere blongs to the body parts
+WC_UI_UWP_Pages.Calibration.ModeTooltip_DiameterMax	en-US	Selection mode for defining closest (maximum) diameter of the sphere blongs to the body parts
+WC_UI_UWP_Pages.Examination.SendCameraPropertiesToCameraFailed	de-DE	Sending camera properties to the camera has been failed!
+WC_UI_UWP_Pages.Examination.SendCameraPropertiesToCameraFailed	en-US	Sending camera properties to the camera has been failed!
+WC_UI_Web_Hardware.Label.SerialNumber	en-US	Serial Number
+WC_UI_Web_Hardware.Label.SerialNumber	hu-HU	Serial Number
+WC_UI_Web_Hardware.Label.SerialNumber	de-DE	Serial Number
+WC_UI_Web_Common.CompanyRelating.ApplicationName	de-DE	ServiceFlex
+WC_UI_Web_Common.CompanyRelating.ApplicationName	en-US	ServiceFlex
+WC_UI_Web_Common.CompanyRelating.ApplicationName	hu-HU	ServiceFlex
+WC_MenuContent.Setting	en-US	Setting
+WC_MenuContent.Setting	de-DE	Setting
+WC_UI_UWP_Menu.Settings	de-DE	Settings
+WC_UI_Web_Header.Label.Settings	de-DE	Settings
+WC_UI_UWP_Pages.Settings.Title	en-US	Settings
+WC_UI_UWP_Menu.Settings	en-US	Settings
+WC_UI_Web_Header.Label.Settings	hu-HU	Settings
+WC_UI_Web_Header.Label.Settings	en-US	Settings
+WC_UI_Web_Hardware.AWB.SHADE	en-US	Shade
+WC_UI_Web_Hardware.AWB.SHADE	de-DE	Shade
+WC_BodyPart.Shoulder	de-DE	Shoulder
+WC_BodyPart.Shoulder	en-US	Shoulder
+WC_UI_UWP_Pages.Calibration.ReferenceButtonTooltip	en-US	Show/Hide reference lines
+WC_UI_UWP_Pages.Calibration.ReferenceButtonTooltip	de-DE	Show/Hide reference lines
+WC_UI_UWP_Pages.Results.FrontCameraButtonTooltip	de-DE	Shows the timeline of the front camera
+WC_UI_UWP_Pages.Results.FrontCameraButtonTooltip	en-US	Shows the timeline of the front camera
+WC_UI_UWP_Pages.Results.LeftCameraButtonTooltip	en-US	Shows the timeline of the left camera
+WC_UI_UWP_Pages.Results.LeftCameraButtonTooltip	de-DE	Shows the timeline of the left camera
+WC_UI_UWP_Pages.Results.RearCameraButtonTooltip	de-DE	Shows the timeline of the rear camera
+WC_UI_UWP_Pages.Results.RearCameraButtonTooltip	en-US	Shows the timeline of the rear camera
+WC_UI_UWP_Pages.Results.RightCameraButtonTooltip	en-US	Shows the timeline of the right camera
+WC_UI_UWP_Pages.Results.RightCameraButtonTooltip	de-DE	Shows the timeline of the right camera
+WC_UI_UWP_Pages.Results.SlowButtonTooltip	de-DE	Slow down the recording
+WC_UI_UWP_Pages.Results.SlowButtonTooltip	en-US	Slow down the recording
+WC_MediaType.Sound	en-US	Sound
+WC_MediaType.Sound	hu-HU	Sound
+WC_UI_Web_Common.GridActionButtons.Start	de-DE	Start
+WC_UI_Web_Common.Button.Start	de-DE	Start
+WC_UI_Web_Common.GridActionButtons.Start	en-US	Start
+WC_UI_Web_Common.Button.Start	en-US	Start
+WC_UI_UWP_Pages.Examination.StartRecording	en-US	Start
+WC_UI_Web_Common.Button.Start	hu-HU	Start
+WC_UI_Web_Common.GridActionButtons.Start	hu-HU	Start
+WC_UI_Web_Common.Label.StartOfTheDay	hu-HU	Start Of The Day
+WC_UI_Web_Common.Label.StartOfTheDay	en-US	Start Of The Day
+WC_UI_Web_Common.Label.StartOfTheDay	de-DE	Start Of The Day
+WC_UI_Web_Common.Label.StartOfTheIsoWeek	de-DE	Start Of The Iso Week
+WC_UI_Web_Common.Label.StartOfTheIsoWeek	en-US	Start Of The Iso Week
+WC_UI_Web_Common.Label.StartOfTheIsoWeek	hu-HU	Start Of The Iso Week
+WC_UI_Web_Common.Label.StartOfTheMonth	hu-HU	Start Of The Month
+WC_UI_Web_Common.Label.StartOfTheMonth	en-US	Start Of The Month
+WC_UI_Web_Common.Label.StartOfTheMonth	de-DE	Start Of The Month
+WC_UI_Web_Common.Label.StartOfThePreviousDay	de-DE	Start Of The Previous Day
+WC_UI_Web_Common.Label.StartOfThePreviousDay	en-US	Start Of The Previous Day
+WC_UI_Web_Common.Label.StartOfThePreviousDay	hu-HU	Start Of The Previous Day
+WC_UI_Web_Common.Label.StartOfThePreviousIsoWeek	hu-HU	Start Of The Previous Iso Week
+WC_UI_Web_Common.Label.StartOfThePreviousIsoWeek	en-US	Start Of The Previous Iso Week
+WC_UI_Web_Common.Label.StartOfThePreviousIsoWeek	de-DE	Start Of The Previous Iso Week
+WC_UI_Web_Common.Label.StartOfThePreviousMonth	de-DE	Start Of The Previous Month
+WC_UI_Web_Common.Label.StartOfThePreviousMonth	en-US	Start Of The Previous Month
+WC_UI_Web_Common.Label.StartOfThePreviousMonth	hu-HU	Start Of The Previous Month
+WC_UI_Web_Common.Label.StartOfThePreviousQuarter	hu-HU	Start Of The Previous Quarter
+WC_UI_Web_Common.Label.StartOfThePreviousQuarter	en-US	Start Of The Previous Quarter
+WC_UI_Web_Common.Label.StartOfThePreviousQuarter	de-DE	Start Of The Previous Quarter
+WC_UI_Web_Common.Label.StartOfThePreviousWeek	de-DE	Start Of The Previous Week
+WC_UI_Web_Common.Label.StartOfThePreviousWeek	en-US	Start Of The Previous Week
+WC_UI_Web_Common.Label.StartOfThePreviousWeek	hu-HU	Start Of The Previous Week
+WC_UI_Web_Common.Label.StartOfThePreviousYear	hu-HU	Start Of The Previous Year
+WC_UI_Web_Common.Label.StartOfThePreviousYear	en-US	Start Of The Previous Year
+WC_UI_Web_Common.Label.StartOfThePreviousYear	de-DE	Start Of The Previous Year
+WC_UI_Web_Common.Label.StartOfTheQuarter	de-DE	Start Of The Quarter
+WC_UI_Web_Common.Label.StartOfTheQuarter	en-US	Start Of The Quarter
+WC_UI_Web_Common.Label.StartOfTheQuarter	hu-HU	Start Of The Quarter
+WC_UI_Web_Common.Label.StartOfTheWeek	hu-HU	Start Of The Week
+WC_UI_Web_Common.Label.StartOfTheWeek	en-US	Start Of The Week
+WC_UI_Web_Common.Label.StartOfTheWeek	de-DE	Start Of The Week
+WC_UI_Web_Common.Label.StartOfTheYear	de-DE	Start Of The Year
+WC_UI_Web_Common.Label.StartOfTheYear	en-US	Start Of The Year
+WC_UI_Web_Common.Label.StartOfTheYear	hu-HU	Start Of The Year
+WC_UI_Web_Common.Label.StartWith	hu-HU	Start With
+WC_UI_Web_Common.Label.StartWith	en-US	Start With
+WC_UI_Web_Common.Label.StartWith	de-DE	Start With
+WC_UI_Web_QueryOption.Label.StateName	de-DE	State Name
+WC_UI_Web_QueryOption.Label.StateName	en-US	State Name
+WC_UI_Web_QueryOption.Label.StateName	hu-HU	State Name
+WC_UI_UWP_Pages.Results.PrevButtonTooltip	en-US	Step back a frame in the recording
+WC_UI_UWP_Pages.Results.PrevButtonTooltip	de-DE	Step back a frame in the recording
+WC_UI_UWP_Pages.Results.NextButtonTooltip	de-DE	Step forward a frame in the recording
+WC_UI_UWP_Pages.Results.NextButtonTooltip	en-US	Step forward a frame in the recording
+WC_UI_UWP_Pages.Results.NextSnapshotButtonTooltip	en-US	Steps to the next marker position
+WC_UI_UWP_Pages.Results.NextSnapshotButtonTooltip	de-DE	Steps to the next marker position
+WC_UI_UWP_Pages.Results.PrevSnapshotButtonTooltip	de-DE	Steps to the previous marker position
+WC_UI_UWP_Pages.Results.PrevSnapshotButtonTooltip	en-US	Steps to the previous marker position
+WC_UI_UWP_Pages.Results.PauseButtonTooltip	en-US	Stops the recording
+WC_UI_UWP_Pages.Results.PauseButtonTooltip	de-DE	Stops the recording
+WC_UI_UWP_Pages.Examination.StoreCurrentAnalysis	de-DE	Storing current analysis results
+WC_UI_UWP_Pages.Examination.StoreCurrentAnalysis	en-US	Storing current analysis results
+WC_UI_Web_Common.Alert.SuccessfulChooseOperation	en-US	Successful Choose Operation
+WC_UI_Web_Common.Alert.SuccessfulChooseOperation	de-DE	Successful Choose Operation
+WC_UI_Web_Common.Alert.SuccessfulCopyOperation	de-DE	Successful Copy Operation
+WC_UI_Web_Common.Alert.SuccessfulCopyOperation	en-US	Successful Copy Operation
+WC_UI_Web_Common.Alert.SuccessfulCreateOperation	en-US	Successful Create Operation
+WC_UI_Web_Common.Alert.SuccessfulCreateOperation	de-DE	Successful Create Operation
+WC_UI_Web_Common.Alert.SuccessfulDeleteOperation	de-DE	Successful Delete Operation
+WC_UI_Web_Common.Alert.SuccessfulDeleteOperation	en-US	Successful Delete Operation
+WC_UI_Web_Common.Alert.SuccessfulReloadOperation	en-US	Successful Reload Operation
+WC_UI_Web_Common.Alert.SuccessfulReloadOperation	de-DE	Successful Reload Operation
+WC_UI_Web_Common.Alert.SuccessfulReloadOperation	hu-HU	Successful Reload Operation
+WC_UI_Web_Common.Alert.SuccessfulUpdateOperation	de-DE	Successful Update Operation
+WC_UI_Web_Common.Alert.SuccessfulUpdateOperation	en-US	Successful Update Operation
+WC_UI_UWP_Common.Label.Sum	en-US	Sum
+WC_UI_UWP_Common.Label.Sum	de-DE	Sum
+WC_UI_Web_Common.GridActionButtons.Suspend	hu-HU	Suspend
+WC_UI_Web_Common.GridActionButtons.Suspend	de-DE	Suspend
+WC_UI_Web_Common.GridActionButtons.Suspend	en-US	Suspend
+WC_UI_UWP_Pages.Preparation.SyncExaminations	en-US	Sync examinations
+WC_UI_UWP_Pages.Preparation.SyncExaminations	de-DE	Sync examinations
+WC_UI_UWP_Login.Label.Synchronization	en-US	Syncronization
+WC_UI_UWP_Login.Label.Synchronization	de-DE	Syncronization
+WC_UI_UWP_Pages.Patient.Phone	hu-HU	Telefon
+WC_UI_UWP_Pages.Patient.Phone	de-DE	Telefon
+WC_MediaType.Text	hu-HU	Text
+WC_MediaType.Text	en-US	Text
+WC_UI_UWP_Pages.HardwareInfo.AssignedHardware	en-US	The associated device:
+WC_UI_UWP_Pages.HardwareInfo.AssignedHardware	de-DE	The associated device:
+WC_UI_UWP_Pages.CalibrationItemControl.RectangleStatusEnum_Undefined	de-DE	The bounding rectangle of the selected body point and direction is not defined yet!
+WC_UI_UWP_Pages.CalibrationItemControl.RectangleStatusEnum_Undefined	en-US	The bounding rectangle of the selected body point and direction is not defined yet!
+WC_UI_UWP_Pages.CalibrationItemControl.RectangleStatusEnum_Defined	en-US	The bounding rectangle of the selected body point and direction is set.
+WC_UI_UWP_Pages.CalibrationItemControl.RectangleStatusEnum_Defined	de-DE	The bounding rectangle of the selected body point and direction is set.
+WC_UI_UWP_Pages.CalibrationItemControl.RectangleStatusEnum_Processing	de-DE	The bounding rectangle of the selected body point and direction is under processing!
+WC_UI_UWP_Pages.CalibrationItemControl.RectangleStatusEnum_Processing	en-US	The bounding rectangle of the selected body point and direction is under processing!
+WC_UI_UWP_Pages.Preparation.ExaminationTypeUnnecessaryDevice	en-US	The device is not necessary for this kind of analysis
+WC_UI_UWP_Pages.Preparation.ExaminationTypeUnnecessaryDevice	de-DE	The device is not necessary for this kind of analysis
+WC_UI_UWP_Pages.CalibrationItemControl.PercentTooltip	de-DE	The founded rate of sphere belongs to the selected body point and direction
+WC_UI_UWP_Pages.CalibrationItemControl.PercentTooltip	en-US	The founded rate of sphere belongs to the selected body point and direction
+WC_UI_UWP_Login.Label.LoggedInUser	en-US	The logged in user:
+WC_UI_UWP_Login.Label.LoggedInUser	de-DE	The logged in user:
+WC_UI_UWP_Pages.DiameterDialog.InvalidMaximumValue	de-DE	The maximum diameter factor is invalid!
+WC_UI_UWP_Pages.DiameterDialog.InvalidMaximumValue	en-US	The maximum diameter factor is invalid!
+WC_UI_UWP_Pages.DiameterDialog.MinMaxOrderError	en-US	The maximum diameter factor must be bigger than the minimum value!
+WC_UI_UWP_Pages.DiameterDialog.MinMaxOrderError	de-DE	The maximum diameter factor must be bigger than the minimum value!
+WC_UI_UWP_Pages.DiameterDialog.InvalidMaximumRange	de-DE	The maximum diameter factor value must be set between 0 and 1!
+WC_UI_UWP_Pages.DiameterDialog.InvalidMaximumRange	en-US	The maximum diameter factor value must be set between 0 and 1!
+WC_UI_UWP_Pages.DiameterDialog.InvalidMinimumValue	en-US	The minimum diameter factor is invalid!
+WC_UI_UWP_Pages.DiameterDialog.InvalidMinimumValue	de-DE	The minimum diameter factor is invalid!
+WC_UI_UWP_Pages.DiameterDialog.InvalidMinimumRange	de-DE	The minimum diameter factor value must be set between 0 and 1!
+WC_UI_UWP_Pages.DiameterDialog.InvalidMinimumRange	en-US	The minimum diameter factor value must be set between 0 and 1!
+WC_UI_UWP_Common.Error.InvalidArgument	en-US	The parameter '{0}' is invalid!
+WC_UI_UWP_Common.Error.InvalidArgument	de-DE	The parameter '{0}' is invalid!
+WC_UI_UWP_Pages.Examination.FinishedFailed	de-DE	The recordings has been failed!
+WC_UI_UWP_Pages.Examination.FinishedFailed	en-US	The recordings has been failed!
+WC_UI_UWP_Pages.Examination.FinishedSucceeded	en-US	The recordings has been finished successfully.
+WC_UI_UWP_Pages.Examination.FinishedSucceeded	de-DE	The recordings has been finished successfully.
+WC_UI_UWP_Pages.CalibrationItemControl.CalibrationStatusEnum_Valid	de-DE	The selected body point from this direction is calibrated successfully.
+WC_UI_UWP_Pages.CalibrationItemControl.CalibrationStatusEnum_Valid	en-US	The selected body point from this direction is calibrated successfully.
+WC_UI_UWP_Pages.CalibrationItemControl.CalibrationStatusEnum_Invalid	en-US	The selected body point from this direction is not calibrated yet!
+WC_UI_UWP_Pages.CalibrationItemControl.CalibrationStatusEnum_Invalid	de-DE	The selected body point from this direction is not calibrated yet!
+WC_UI_UWP_Pages.CalibrationItemControl.CalibrationStatusEnum_Unnecessary	de-DE	The selected body point is not visible from this direction!
+WC_UI_UWP_Pages.CalibrationItemControl.CalibrationStatusEnum_Unnecessary	en-US	The selected body point is not visible from this direction!
+WC_UI_UWP_Pages.MarkerDialog.AvailableCorrectionItems	en-US	There are {0} item(s) available for the selected correction.
+WC_UI_UWP_Pages.MarkerDialog.AvailableCorrectionItems	de-DE	There are {0} item(s) available for the selected correction.
+WC_UI_UWP_Pages.MarkerDialog.AvailableCorrections	de-DE	There are {0} marker(s) available for the selected marker.
+WC_UI_UWP_Pages.MarkerDialog.AvailableCorrections	en-US	There are {0} marker(s) available for the selected marker.
+WC_UI_UWP_Pages.MarkerDialog.NoAvailableCorrectionItems	en-US	There are no items available for the selected correction.
+WC_UI_UWP_Pages.MarkerDialog.NoAvailableCorrectionItems	de-DE	There are no items available for the selected correction.
+WC_UI_UWP_Pages.MarkerDialog.NoAvailableCorrections	de-DE	There are no markers available for the selected marker.
+WC_UI_UWP_Pages.MarkerDialog.NoAvailableCorrections	en-US	There are no markers available for the selected marker.
+WC_UI_UWP_Pages.CalibrationNameDialog.ExistingName	en-US	There exists a calibration with this name, please modify it!
+WC_UI_UWP_Pages.CalibrationNameDialog.ExistingName	de-DE	There exists a calibration with this name, please modify it!
+WC_UI_UWP_Pages.Preparation.NoCalibration	de-DE	There is no calibration data in the system, please create one!
+WC_UI_UWP_Pages.Preparation.NoCalibration	en-US	There is no calibration data in the system, please create one!
+WC_UI_UWP_Pages.Examination.Errors.NoSelectedCalibration	en-US	There is no calibration selected
+WC_UI_UWP_Pages.Examination.Errors.NoSelectedCalibration	de-DE	There is no calibration selected
+WC_UI_UWP_Pages.Examination.Errors.NoSelectedExaminationType	de-DE	There is no examination type selected
+WC_UI_UWP_Pages.Examination.Errors.NoSelectedExaminationType	en-US	There is no examination type selected
+WC_UI_UWP_Pages.Examination.Errors.NoSelectedPatient	en-US	There is no patient selected
+WC_UI_UWP_Pages.Examination.Errors.NoSelectedPatient	de-DE	There is no patient selected
+WC_UI_UWP_Pages.Examination.CameraRecordError	de-DE	There was an error on the camera on starting recording
+WC_UI_UWP_Pages.Examination.CameraRecordError	en-US	There was an error on the camera on starting recording
+WC_UI_UWP_Pages.Examination.InsoleRecordError	en-US	There was an error on the insole on starting recording
+WC_UI_UWP_Pages.Examination.InsoleRecordError	de-DE	There was an error on the insole on starting recording
+WC_UI_UWP_Pages.HardwareInfo.NoAssignedHardware	de-DE	There's no associated hardware device!
+WC_UI_UWP_Pages.HardwareInfo.NoAssignedHardware	en-US	There's no associated hardware device!
+WC_UI_UWP_Common.Label.InvalidCpu	en-US	This device is not registered!
+WC_UI_UWP_Common.Label.InvalidCpu	de-DE	This device is not registered!
+WC_UI_Web_Validation.RequiredErrorMessage	de-DE	This field is required
+WC_UI_Web_Validation.RequiredErrorMessage	en-US	This field is required
+WC_UI_Web_Common.Label.TimeType	de-DE	Time Type
+WC_UI_Web_Common.Label.TimeType	en-US	Time Type
+WC_UI_Web_Common.Label.TimeType	hu-HU	Time Type
+WC_UI_UWP_Pages.Diagnose.ImagePicker.Timeline	de-DE	Timeline
+WC_UI_UWP_Pages.Diagnose.ImagePicker.Timeline	en-US	Timeline
+WC_HardwareUpdateType.Treadmill	en-US	Treadmill
+WC_HardwareUpdateType.Treadmill	de-DE	Treadmill
+WC_HardwareUpdateType.Treadmill	hu-HU	Treadmill
+WC_UI_Web_Hardware.AWB.TUNGSTEN	en-US	Tungsten
+WC_UI_Web_Hardware.AWB.TUNGSTEN	hu-HU	Tungsten
+WC_UI_Web_Hardware.AWB.TUNGSTEN	de-DE	Tungsten
+WC_UI_Web_Common.Button.Update	de-DE	Update
+WC_UI_UWP_Common.Label.Update	de-DE	Update
+WC_UI_UWP_Common.Label.Update	en-US	Update
+WC_UI_Web_Common.Button.Update	en-US	Update
+WC_UI_Web_Globalization.Button.UpdateDatabase	de-DE	Update Database
+WC_UI_Web_Globalization.Button.UpdateDatabase	en-US	Update Database
+WC_UI_Web_Common.GridActionButtons.UpdateRecord	de-DE	Update Record
+WC_UI_Web_Common.GridActionButtons.UpdateRecord	en-US	Update Record
+WC_UI_Web_BodyPartProperty.PageHeader.UpdateBodyPartProperty	en-US	Update The Body Part Property
+WC_UI_Web_BodyPartProperty.PageHeader.UpdateBodyPartProperty	de-DE	Update The Body Part Property
+WC_UI_Web_BodyPartProperty.PageHeader.UpdateBodyPartProperty	hu-HU	Update The Body Part Property
+WC_UI_Web_QueryOption.PageHeader.UpdateTheCurrentState	hu-HU	Update the current state
+WC_UI_Web_QueryOption.PageHeader.UpdateTheCurrentState	en-US	Update the current state
+WC_UI_Web_QueryOption.PageHeader.UpdateTheCurrentState	de-DE	Update the current state
+WC_UI_Web_Examination.PageHeader.UpdateExamination	de-DE	Update The Examination
+WC_UI_Web_Examination.PageHeader.UpdateExamination	en-US	Update The Examination
+WC_UI_Web_Examination.PageHeader.UpdateExamination	hu-HU	Update The Examination
+WC_UI_Web_Hardware.PageHeader.UpdateHardware	hu-HU	Update The Hardware
+WC_UI_Web_Hardware.PageHeader.UpdateHardware	en-US	Update The Hardware
+WC_UI_Web_Hardware.PageHeader.UpdateHardware	de-DE	Update The Hardware
+WC_UI_Web_HardwareUpdate.PageHeader.UpdateHardwareUpdate	de-DE	Update The Hardware Update
+WC_UI_Web_HardwareUpdate.PageHeader.UpdateHardwareUpdate	en-US	Update The Hardware Update
+WC_UI_Web_HardwareUpdate.PageHeader.UpdateHardwareUpdate	hu-HU	Update The Hardware Update
+WC_UI_Web_License.PageHeader.UpdateLicense	hu-HU	Update The License
+WC_UI_Web_License.PageHeader.UpdateLicense	en-US	Update The License
+WC_UI_Web_License.PageHeader.UpdateLicense	de-DE	Update The License
+WC_UI_Web_Organization.PageHeader.UpdateOrganization	de-DE	Update The Organization
+WC_UI_Web_Organization.PageHeader.UpdateOrganization	en-US	Update The Organization
+WC_UI_Web_Patient.PageHeader.UpdatePatient	en-US	Update The Patient
+WC_UI_Web_Patient.PageHeader.UpdatePatient	hu-HU	Update The Patient
+WC_UI_Web_Patient.PageHeader.UpdatePatient	de-DE	Update The Patient
+WC_UI_Web_QueryOption.PageHeader.UpdateQueryOption	de-DE	Update The Query Option
+WC_UI_Web_QueryOption.PageHeader.UpdateQueryOption	hu-HU	Update The Query Option
+WC_UI_Web_QueryOption.PageHeader.UpdateQueryOption	en-US	Update The Query Option
+WC_UI_Web_Role.PageHeader.UpdateRole	en-US	Update The Role
+WC_UI_Web_Role.PageHeader.UpdateRole	de-DE	Update The Role
+WC_UI_Web_User.PageHeader.UpdateUser	de-DE	Update The User
+WC_UI_Web_User.PageHeader.UpdateUser	en-US	Update The User
+WC_UI_Web_Organization.PageHeader.UpdateUser	en-US	Update User
+WC_UI_Web_Organization.PageHeader.UpdateUser	hu-HU	Update User
+WC_UI_Web_Organization.PageHeader.UpdateUser	de-DE	Update User
+WC_Group.User	en-US	User
+WC_Group.User	de-DE	User
+WC_Group.User	hu-HU	User
+WC_UI_Web_User.PageHeader.UserDetails	de-DE	User Details
+WC_UI_Web_User.PageHeader.UserDetails	en-US	User Details
+WC_UI_Web_Organization.Label.UserFullName	en-US	User Full Name
+WC_UI_Web_Organization.Label.UserFullName	hu-HU	User Full Name
+WC_UI_Web_Organization.Label.UserFullName	de-DE	User Full Name
+WC_UI_UWP_Login.Label.UserName	en-US	User name
+WC_UI_UWP_Login.Label.UserName	de-DE	User name
+WC_UI_Web_User.Label.UserType	de-DE	User Type
+WC_UI_Web_User.Label.UserType	en-US	User Type
+WC_UI_Web_Organization.Label.Username	en-US	Username
+WC_UI_Web_Login.Labels.Username	en-US	Username
+WC_UI_Web_User.Label.UserName	en-US	UserName
+WC_UI_Web_Organization.Label.Username	hu-HU	Username
+WC_UI_Web_Organization.Label.Username	de-DE	Username
+WC_UI_Web_User.Label.UserName	de-DE	UserName
+WC_UI_Web_Login.Labels.Username	de-DE	Username
+WC_UI_Web_Header.Label.Users	de-DE	Users
+WC_UI_Web_Home.Label.Users	de-DE	Users
+WC_UI_Web_Organization.Label.Users	de-DE	Users
+WC_MenuContent.AccountManagement.Users	en-US	Users
+WC_MenuContent.AccountManagement.Users	de-DE	Users
+WC_UI_Web_Organization.Label.Users	hu-HU	Users
+WC_UI_Web_Header.Label.Users	hu-HU	Users
+WC_UI_Web_Home.Label.Users	hu-HU	Users
+WC_UI_Web_Organization.Label.Users	en-US	Users
+WC_UI_Web_Header.Label.Users	en-US	Users
+WC_UI_Web_Home.Label.Users	en-US	Users
+WC_Group.Validation	hu-HU	Validation
+WC_Group.Validation	de-DE	Validation
+WC_Group.Validation	en-US	Validation
+WC_UI_Web_HardwareUpdate.Label.Version	hu-HU	Version
+WC_UI_Web_HardwareUpdate.Label.Version	en-US	Version
+WC_UI_Web_HardwareUpdate.Label.Version	de-DE	Version
+WC_MediaType.Video	en-US	Video
+WC_MediaType.Video	hu-HU	Video
+WC_UI_Web_Common.Button.ViewFile	en-US	View File
+WC_UI_Web_Common.Button.ViewFile	de-DE	View File
+WC_UI_UWP_Pages.Examination.WaitingForRecordings	de-DE	Waiting for the recordings
+WC_UI_UWP_Pages.Examination.WaitingForRecordings	en-US	Waiting for the recordings
+WC_UI_Web_Home.Label.WalkingExam	de-DE	Walking Exam
+WC_UI_Web_Home.Label.WalkingExam	hu-HU	Walking Exam
+WC_UI_Web_Home.Label.WalkingExam	en-US	Walking Exam
+WC_UI_UWP_Pages.Log.WarningDescription	en-US	Warnings of the application.
+WC_UI_UWP_Pages.Log.WarningDescription	de-DE	Warnings of the application.
+WC_UI_UWP_Pages.Patient.Weight	de-DE	Weight
+WC_UI_UWP_Pages.Patient.Weight	en-US	Weight
+WC_UI_Web_Patient.Label.Weight	de-DE	Weight
+WC_UI_Web_Patient.Label.Weight	en-US	Weight
+WC_UI_Web_Patient.Label.Weight	hu-HU	Weight
+WC_UI_UWP_Pages.Welcome.Title	de-DE	Welcome
+WC_UI_UWP_Pages.Welcome.Title	en-US	Welcome
+WC_UI_Web_Common.Label.Years	de-DE	Years
+WC_UI_Web_Common.Label.Years	en-US	Years
+WC_UI_Web_Common.Label.Years	hu-HU	Years
+WC_Marker.Yellow	de-DE	Yellow
+WC_UI_UWP_Common.Markers.Yellow	de-DE	Yellow
+WC_UI_UWP_Common.Markers.Yellow	en-US	Yellow
+WC_Marker.Yellow	en-US	Yellow
+WC_UI_UWP_Common.Label.Yesterday	en-US	Yesterday
+WC_UI_UWP_Common.Label.Yesterday	de-DE	Yesterday
+WC_UI_UWP_Menu.ResultsTooltip	de-DE	You can analyse and replaye the recorded images here
+WC_UI_UWP_Menu.ResultsTooltip	en-US	You can analyse and replaye the recorded images here
+WC_UI_UWP_Pages.Log.ToolTip	en-US	You can browse the activity log here
+WC_UI_UWP_Pages.Log.Lead	en-US	You can browse the activity log here
+WC_UI_UWP_Pages.Log.ToolTip	de-DE	You can browse the activity log here
+WC_UI_UWP_Pages.Log.Lead	de-DE	You can browse the activity log here
+WC_UI_UWP_Pages.Calibration.Lead	de-DE	You can calibrate the cameras on this page
+WC_UI_UWP_Pages.CalibrationNameDialog.Lead	de-DE	You can calibrate the cameras on this page
+WC_UI_UWP_Pages.Calibration.ToolTip	de-DE	You can calibrate the cameras on this page
+WC_UI_UWP_Pages.Calibration.Lead	en-US	You can calibrate the cameras on this page
+WC_UI_UWP_Pages.CalibrationNameDialog.Lead	en-US	You can calibrate the cameras on this page
+WC_UI_UWP_Pages.Calibration.ToolTip	en-US	You can calibrate the cameras on this page
+WC_UI_UWP_Pages.HardwareInfo.ToolTip	en-US	You can check and set the status of the connected devices.
+WC_UI_UWP_Pages.HardwareInfo.Lead	en-US	You can check and set the status of the connected devices.
+WC_UI_UWP_Pages.HardwareInfo.ToolTip	de-DE	You can check and set the status of the connected devices.
+WC_UI_UWP_Pages.HardwareInfo.Lead	de-DE	You can check and set the status of the connected devices.
+WC_UI_UWP_Pages.Results.ToolTip	de-DE	You can check the results of the analysis on video and insole, and check the chart based on the analysis results.
+WC_UI_UWP_Pages.Results.Lead	de-DE	You can check the results of the analysis on video and insole, and check the chart based on the analysis results.
+WC_UI_UWP_Pages.Results.Lead	en-US	You can check the results of the analysis on video and insole, and check the chart based on the analysis results.
+WC_UI_UWP_Pages.Results.ToolTip	en-US	You can check the results of the analysis on video and insole, and check the chart based on the analysis results.
+WC_UI_UWP_Menu.CalibrationTooltip	en-US	You can do the camera calibration and settings here
+WC_UI_UWP_Menu.CalibrationTooltip	de-DE	You can do the camera calibration and settings here
+WC_UI_UWP_Pages.Diagnose.ToolTip	de-DE	You can edit and publish the analysis results here
+WC_UI_UWP_Pages.Diagnose.Lead	de-DE	You can edit and publish the analysis results here
+WC_UI_UWP_Pages.Diagnose.Lead	en-US	You can edit and publish the analysis results here
+WC_UI_UWP_Pages.Diagnose.ToolTip	en-US	You can edit and publish the analysis results here
+WC_UI_UWP_Menu.SettingsTooltip	en-US	You can edit the settings here
+WC_UI_UWP_Menu.SettingsTooltip	de-DE	You can edit the settings here
+WC_UI_Web_BodyPartProperty.Label.InsertFAEToolTip	de-DE	You can insert text from the frequently used expression list
+WC_UI_Web_BodyPartProperty.Label.InsertFAEToolTip	en-US	You can insert text from the frequently used expression list
+WC_UI_UWP_Pages.Settings.Lead	en-US	You can make the settings on this page
+WC_UI_UWP_Pages.Settings.ToolTip	en-US	You can make the settings on this page
+WC_UI_UWP_Pages.Settings.Lead	de-DE	You can make the settings on this page
+WC_UI_UWP_Pages.Settings.ToolTip	de-DE	You can make the settings on this page
+WC_UI_UWP_Pages.CalibrationNameDialog.ToolTip	de-DE	You can modify the calibration properties on this dialog
+WC_UI_UWP_Pages.CalibrationNameDialog.ToolTip	en-US	You can modify the calibration properties on this dialog
+WC_UI_UWP_Menu.LogTooltip	en-US	You can see the application log here
+WC_UI_UWP_Menu.LogTooltip	de-DE	You can see the application log here
+WC_UI_UWP_Menu.PreparationTooltip	de-DE	You can select here the analysis type and see the clothing template
+WC_UI_UWP_Menu.PreparationTooltip	en-US	You can select here the analysis type and see the clothing template
+WC_UI_UWP_Menu.PatientTooltip	en-US	You can select here the current patient, see all personal data
+WC_UI_UWP_Menu.PatientTooltip	de-DE	You can select here the current patient, see all personal data
+WC_UI_UWP_Menu.ExaminationTooltip	de-DE	You can start here the analysis and wait while processing
+WC_UI_UWP_Menu.ExaminationTooltip	en-US	You can start here the analysis and wait while processing
+WC_UI_UWP_Pages.HardwareInfo.WrongHardware	en-US	You cannot associate here the selected hardware from the list!
+WC_UI_UWP_Pages.HardwareInfo.WrongHardware	de-DE	You cannot associate here the selected hardware from the list!
+WC_UI_Web_Exception.PageHeader.SessionException	de-DE	Your Session Expired!
+WC_UI_Web_Exception.PageHeader.SessionException	en-US	Your Session Expired!
+WC_UI_Web_Exception.Button.GoToLoginPage	en-US	Your session is expired, click here to login again!
+WC_UI_Web_Exception.Button.GoToLoginPage	de-DE	Your session is expired, click here to login again!
+ */
