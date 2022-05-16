@@ -15,7 +15,7 @@ DoWork::DoWork(QObject *parent) :QObject(parent)
 {
 
 }
-
+//egy
 auto DoWork::Params::Parse(const QCoreApplication& app) -> DoWork::Params
 {
     QCommandLineParser parser;
