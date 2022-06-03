@@ -129,4 +129,5 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 DISTFILES += \
     testdata/Translations_202206031312.csv \
     testdata/todo.txt \
+    testdata/used_wcodes.csv \
     testdata/wcodes.txt
