@@ -1,3 +1,15 @@
+select WordCode, LanguageCode, "Text" from lang.Translations t1 where exists
+(
+        select  WordCode, LanguageCode, "Text" from  lang.Translations t2 where
+                t1."Text" = t2."Text"
+                and
+                t1.LanguageCode <> t2.LanguageCode
+)
+
+// -t -i Translations_202206031312.csv
+
+
+
 // HIBA
 //  01a a szinkron után kell elindítani a listenert, (nincs hw lista a hw info lapon, pedig a szinkron lehozta)
 //  01b az előkészítés lapon az öltöztető ábra pucér maradt

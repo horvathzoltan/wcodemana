@@ -28,17 +28,20 @@ auto DoWork::Params::Parse(const QCoreApplication& app) -> DoWork::Params
     const QString OPTION_OUT = QStringLiteral("output");
     const QString OPTION_BACKUP = QStringLiteral("backup");
     const QString OPTION_TEST = QStringLiteral("test");
+    const QString OPTION_UWC = QStringLiteral("uwcFile");
 
     com::helper::CommandLineParserHelper::addOption(&parser, OPTION_IN, QStringLiteral("geometry file as input"));
     com::helper::CommandLineParserHelper::addOption(&parser, OPTION_OUT, QStringLiteral("g-code file as output"));
     com::helper::CommandLineParserHelper::addOptionBool(&parser, OPTION_BACKUP, QStringLiteral("set if backup is needed"));
     com::helper::CommandLineParserHelper::addOptionBool(&parser, OPTION_TEST, QStringLiteral("set to activate test mode"));
+    com::helper::CommandLineParserHelper::addOption(&parser, OPTION_UWC, QStringLiteral("usedWordCodes"));
 
     parser.process(app);
 
     return {
         parser.value(OPTION_IN),
         parser.value(OPTION_OUT),
+        parser.value(OPTION_UWC),
         parser.isSet(OPTION_BACKUP),
         parser.isSet(OPTION_TEST)
     };
@@ -96,25 +99,39 @@ auto DoWork::Work1(MainViewModel::DoWorkModel m) -> MainViewModel::DoWorkRModel
 
     if(params.outFile.isEmpty()){
         QFileInfo fi(params.inFile);
-        QString bn = fi.baseName();
-        params.outFile=bn + ".txt";
+        QString bn = fi.fileName(); //baseName();
+
+        params.outFile=bn;// + ".txt";
     }
     zInfo("workingFolder: "+workingFolder);
-    zInfo(QStringLiteral("params: %1, %2, %3, %4")
-              .arg(params.inFile)
-              .arg(params.outFile)
-              .arg(params.isBackup)
-              .arg(params.isTest));
+    zInfo(QStringLiteral("params: %1, %2, %3, %4 %5")
+          .arg(params.inFile)
+          .arg(params.outFile)
+          .arg(params.isBackup)
+          .arg(params.isTest)
+          .arg(params.uwcFile));
 
     auto d = QDir(workingFolder);
-
     auto file = d.filePath(params.inFile);
     auto wcodes_csv = com::helper::TextFileHelper::loadLines(file);
-
     if(wcodes_csv.isEmpty()) return {QStringLiteral("file is empty"),{}};
 
+/*
+select WordCode, LanguageCode, "Text" from lang.Translations t1 where exists
+(
+    select  WordCode, LanguageCode, "Text" from  lang.Translations t2 where
+        t1."Text" = t2."Text"
+        and
+        t1.LanguageCode <> t2.LanguageCode
+)
+*/
     _wcodes = Wcode::FromCSV(wcodes_csv);
 
+    QString usedWcodesFileName = d.filePath(params.uwcFile);
+    QStringList usedWcodeLines = com::helper::TextFileHelper::loadLines(usedWcodesFileName);
+    if(!usedWcodeLines.isEmpty()){
+        Wcode::AssertByUsing(&_wcodes, usedWcodeLines);
+    }
     //return {QString::number(m.i+1)};
     return
     {

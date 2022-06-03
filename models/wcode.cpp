@@ -80,3 +80,48 @@ QStringList Wcode::ToCode() const
     m.append("");
     return m;
 }
+
+void Wcode::AssertByUsing(QMap<QString, Wcode>* wcodes, const QStringList& used)
+{
+    QString lastFilePath;
+    for(auto& u:used){
+        if(u.isEmpty()) continue;
+        if(u.startsWith("##")){
+            int ix1 = u.indexOf('/');
+            if(ix1>-1){
+                int ix2 = u.indexOf('#', ix1);
+                if(ix2>-1 && ix2>ix1){
+                    lastFilePath = u.mid(ix1, ix2-ix1);
+                }
+            }
+        } else if(!u[0].isDigit()) continue;
+        int ix1 = u.indexOf(':');
+        if(ix1>-1){
+            QString ln = u.left(ix1);
+            int ix2 = u.indexOf('\"', ix1+1);
+            if(ix2>-1){
+                int ix3 = u.indexOf('\"', ix2+1);
+                if(ix3>-1&&ix3>ix2){
+                    bool ok;
+                    int lineNumber = ln.toInt(&ok);
+                    QString wc = u.mid(ix2+1, ix3-ix2-1);
+                    if(ok){
+                        if(wcodes->contains(wc)){
+                            Wcode *w = &(*wcodes)[wc];
+                            w->isUsed=true;
+                            w->fileName = lastFilePath;
+                            w->lineNumber = lineNumber;
+                        }else{
+                            Wcode w;
+                            w.wcode=wc;
+                            w.isUsed = true;
+                            w.fileName = lastFilePath;
+                            w.lineNumber = lineNumber;
+                            wcodes->insert(wc, w);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

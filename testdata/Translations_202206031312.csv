@@ -1,123 +1,123 @@
-WC_Api_Message.ParameterIsNull	hu-HU	Parameter Is Null 1 2 1 3 1
+WC_Api_Message.ParameterIsNull	hu-HU	Parameter Is Null
 WC_Api_Message.ParameterIsNull	en-US	Parameter Is Null
-WC_Api_Message.ParameterIsNull	de-DE	Parameter Is Null 2 3 24 2
+WC_Api_Message.ParameterIsNull	de-DE	Parameter Is Null
 WC_BodyPart.Ankle	hu-HU	
 WC_BodyPart.Ankle	en-US	Ankle
-WC_BodyPart.Ankle	de-DE	Ankle
+WC_BodyPart.Ankle	de-DE	Ankle3
 WC_BodyPart.General	hu-HU	General
 WC_BodyPart.General	en-US	General
-WC_BodyPart.General	de-DE	Allgemein
+WC_BodyPart.General	de-DE	General
 WC_BodyPart.Hip	hu-HU	
 WC_BodyPart.Hip	en-US	Hip
-WC_BodyPart.Hip	de-DE	Hüfte
+WC_BodyPart.Hip	de-DE	Hip
 WC_BodyPart.Knee	hu-HU	
 WC_BodyPart.Knee	en-US	Knee
-WC_BodyPart.Knee	de-DE	Knie
+WC_BodyPart.Knee	de-DE	Knee
 WC_BodyPart.Shoulder	hu-HU	
 WC_BodyPart.Shoulder	en-US	Shoulder
-WC_BodyPart.Shoulder	de-DE	Schulter
+WC_BodyPart.Shoulder	de-DE	Shoulder
 WC_BodyPoint.LeftAnkle	hu-HU	
 WC_BodyPoint.LeftAnkle	en-US	Left ankle
-WC_BodyPoint.LeftAnkle	de-DE	Linker Knöchel
+WC_BodyPoint.LeftAnkle	de-DE	Left ankle
 WC_BodyPoint.LeftHip	hu-HU	
 WC_BodyPoint.LeftHip	en-US	Left ankle
-WC_BodyPoint.LeftHip	de-DE	Linker Knöchel
+WC_BodyPoint.LeftHip	de-DE	Left ankle
 WC_BodyPoint.LeftKnee	hu-HU	
 WC_BodyPoint.LeftKnee	en-US	Left ankle
-WC_BodyPoint.LeftKnee	de-DE	Linker Knöchel
+WC_BodyPoint.LeftKnee	de-DE	Left ankle
 WC_BodyPoint.LeftShoulder	hu-HU	
 WC_BodyPoint.LeftShoulder	en-US	Left shoulder
-WC_BodyPoint.LeftShoulder	de-DE	Linke Schulter
+WC_BodyPoint.LeftShoulder	de-DE	Left shoulder
 WC_BodyPoint.RightAnkle	hu-HU	
 WC_BodyPoint.RightAnkle	en-US	Left ankle
-WC_BodyPoint.RightAnkle	de-DE	Linker Knöchel
+WC_BodyPoint.RightAnkle	de-DE	Left ankle
 WC_BodyPoint.RightHip	hu-HU	
 WC_BodyPoint.RightHip	en-US	Right hip
-WC_BodyPoint.RightHip	de-DE	Rechte Hüfte
+WC_BodyPoint.RightHip	de-DE	Right hip
 WC_BodyPoint.RightKnee	hu-HU	
 WC_BodyPoint.RightKnee	en-US	Left ankle
-WC_BodyPoint.RightKnee	de-DE	Linker Knöchel
+WC_BodyPoint.RightKnee	de-DE	Left ankle
 WC_BodyPoint.RightShoulder	hu-HU	
 WC_BodyPoint.RightShoulder	en-US	Right shoulder
-WC_BodyPoint.RightShoulder	de-DE	Rechte Schulter
+WC_BodyPoint.RightShoulder	de-DE	Right shoulder
 WC_CommonLogLevel.Debug	hu-HU	Debug
 WC_CommonLogLevel.Debug	en-US	Debug
-WC_CommonLogLevel.Debug	de-DE	Debuggen
+WC_CommonLogLevel.Debug	de-DE	
 WC_CommonLogType.Authentication.Login	hu-HU	
 WC_CommonLogType.Authentication.Login	en-US	Login
-WC_CommonLogType.Authentication.Login	de-DE	Anmeldung
+WC_CommonLogType.Authentication.Login	de-DE	
 WC_CommonLogType.Authentication.Logout	hu-HU	
 WC_CommonLogType.Authentication.Logout	en-US	Logout
-WC_CommonLogType.Authentication.Logout	de-DE	Abmeldung
+WC_CommonLogType.Authentication.Logout	de-DE	
 WC_ExaminationType.CalibrationType	hu-HU	
 WC_ExaminationType.CalibrationType	en-US	Calibration
-WC_ExaminationType.CalibrationType	de-DE	Kalibrierung
+WC_ExaminationType.CalibrationType	de-DE	
 WC_ExaminationType.FootPressureExam	hu-HU	
 WC_ExaminationType.FootPressureExam	en-US	Foot analysis
-WC_ExaminationType.FootPressureExam	de-DE	Analyse der Füße
+WC_ExaminationType.FootPressureExam	de-DE	Foot analysis
 WC_ExaminationType.OnlineInsoleExam	hu-HU	Online Insole Exam
 WC_ExaminationType.OnlineInsoleExam	en-US	Online Insole Exam
-WC_ExaminationType.OnlineInsoleExam	de-DE	Online-Einlagenprüfung
+WC_ExaminationType.OnlineInsoleExam	de-DE	Online Insole Exam
 WC_ExaminationType.WalkingExam	hu-HU	
 WC_ExaminationType.WalkingExam	en-US	Gait analysis
-WC_ExaminationType.WalkingExam	de-DE	Analyse des Gangbildes
+WC_ExaminationType.WalkingExam	de-DE	Gait analysis
 WC_Group.BodyPartProperty	hu-HU	BodyPartProperty
 WC_Group.BodyPartProperty	en-US	BodyPartProperty
 WC_Group.BodyPartProperty	de-DE	BodyPartProperty
 WC_Group.Common	hu-HU	Common
 WC_Group.Common	en-US	Common
-WC_Group.Common	de-DE	Gemeinsame
+WC_Group.Common	de-DE	Common
 WC_Group.Examination	hu-HU	Examination
 WC_Group.Examination	en-US	Examination
-WC_Group.Examination	de-DE	Prüfung
+WC_Group.Examination	de-DE	Examination
 WC_Group.Exception	hu-HU	Exception
 WC_Group.Exception	en-US	Exception
-WC_Group.Exception	de-DE	Ausnahme
+WC_Group.Exception	de-DE	Exception
 WC_Group.Globalization	hu-HU	Globalization
 WC_Group.Globalization	en-US	Globalization
-WC_Group.Globalization	de-DE	Globalisierung
+WC_Group.Globalization	de-DE	Globalization
 WC_Group.Hardware	hu-HU	Hardware
 WC_Group.Hardware	en-US	Hardware
 WC_Group.Hardware	de-DE	Hardware
 WC_Group.HardwareUpdate	hu-HU	Hardware Update
 WC_Group.HardwareUpdate	en-US	Hardware Update
-WC_Group.HardwareUpdate	de-DE	Hardware-Update
+WC_Group.HardwareUpdate	de-DE	Hardware Update
 WC_Group.Home	hu-HU	Home
 WC_Group.Home	en-US	Home
-WC_Group.Home	de-DE	Startseite
+WC_Group.Home	de-DE	Home
 WC_Group.License	hu-HU	License
 WC_Group.License	en-US	License
-WC_Group.License	de-DE	Lizenz
+WC_Group.License	de-DE	License
 WC_Group.Login	hu-HU	Login
 WC_Group.Login	en-US	Login
-WC_Group.Login	de-DE	Anmeldung
+WC_Group.Login	de-DE	Login
 WC_Group.Organization	hu-HU	Organization
 WC_Group.Organization	en-US	Organization
-WC_Group.Organization	de-DE	Organisation
+WC_Group.Organization	de-DE	Organization
 WC_Group.Patient	hu-HU	Patient
 WC_Group.Patient	en-US	Patient
 WC_Group.Patient	de-DE	Patient
 WC_Group.QueryOption	hu-HU	Query Option
 WC_Group.QueryOption	en-US	Query Option
-WC_Group.QueryOption	de-DE	Abfrage-Option
+WC_Group.QueryOption	de-DE	Query Option
 WC_Group.Role	hu-HU	Role
 WC_Group.Role	en-US	Role
-WC_Group.Role	de-DE	Rolle
+WC_Group.Role	de-DE	Role
 WC_Group.User	hu-HU	User
 WC_Group.User	en-US	User
-WC_Group.User	de-DE	Benutzer
+WC_Group.User	de-DE	User
 WC_Group.Validation	hu-HU	Validation
 WC_Group.Validation	en-US	Validation
-WC_Group.Validation	de-DE	Validierung
+WC_Group.Validation	de-DE	Validation
 WC_HardwareType.CPU	hu-HU	CPU
 WC_HardwareType.CPU	en-US	CPU
 WC_HardwareType.CPU	de-DE	CPU
 WC_HardwareType.Camera	hu-HU	
 WC_HardwareType.Camera	en-US	Camera
 WC_HardwareType.Camera	de-DE	Camera
-WC_HardwareType.Insole	hu-HU	Talpbetét
+WC_HardwareType.Insole	hu-HU	
 WC_HardwareType.Insole	en-US	Insole
-WC_HardwareType.Insole	de-DE	Einlegesohle
+WC_HardwareType.Insole	de-DE	Insole
 WC_HardwareUpdateType.CPU	hu-HU	CPU
 WC_HardwareUpdateType.CPU	en-US	CPU
 WC_HardwareUpdateType.CPU	de-DE	CPU
@@ -127,15 +127,15 @@ WC_HardwareUpdateType.Camera	de-DE	Camera
 WC_HardwareUpdateType.Insole	hu-HU	
 WC_HardwareUpdateType.Insole	en-US	Insole
 WC_HardwareUpdateType.Insole	de-DE	Insole
-WC_HardwareUpdateType.Treadmill	hu-HU	Futópad
+WC_HardwareUpdateType.Treadmill	hu-HU	Treadmill
 WC_HardwareUpdateType.Treadmill	en-US	Treadmill
-WC_HardwareUpdateType.Treadmill	de-DE	Laufband
+WC_HardwareUpdateType.Treadmill	de-DE	Treadmill
 WC_Marker.Correction	hu-HU	
 WC_Marker.Correction	en-US	Correction
-WC_Marker.Correction	de-DE	Berichtigung
+WC_Marker.Correction	de-DE	Correction
 WC_Marker.Grey	hu-HU	
 WC_Marker.Grey	en-US	Grey
-WC_Marker.Grey	de-DE	Grau
+WC_Marker.Grey	de-DE	Grey
 WC_Marker.Marker	hu-HU	
 WC_Marker.Marker	en-US	Marker
 WC_Marker.Marker	de-DE	Marker
@@ -144,49 +144,49 @@ WC_Marker.Orange	en-US	Orange
 WC_Marker.Orange	de-DE	Orange
 WC_Marker.Pink	hu-HU	Pink
 WC_Marker.Pink	en-US	Pink
-WC_Marker.Pink	de-DE	Rosa
+WC_Marker.Pink	de-DE	Pink
 WC_Marker.Purple	hu-HU	
 WC_Marker.Purple	en-US	Purple
-WC_Marker.Purple	de-DE	Lila
+WC_Marker.Purple	de-DE	Purple
 WC_Marker.Yellow	hu-HU	
 WC_Marker.Yellow	en-US	Yellow
-WC_Marker.Yellow	de-DE	Gelb
+WC_Marker.Yellow	de-DE	Yellow
 WC_MediaType.Image	hu-HU	Image
 WC_MediaType.Image	en-US	Image
-WC_MediaType.Image	de-DE	Bild
+WC_MediaType.Image	de-DE	
 WC_MediaType.PDF	hu-HU	PDF
 WC_MediaType.PDF	en-US	PDF
-WC_MediaType.PDF	de-DE	PDF
+WC_MediaType.PDF	de-DE	
 WC_MediaType.RTF	hu-HU	RTF
 WC_MediaType.RTF	en-US	RTF
-WC_MediaType.RTF	de-DE	RTF
+WC_MediaType.RTF	de-DE	
 WC_MediaType.Sound	hu-HU	Sound
 WC_MediaType.Sound	en-US	Sound
-WC_MediaType.Sound	de-DE	Ton
+WC_MediaType.Sound	de-DE	
 WC_MediaType.Text	hu-HU	Text
 WC_MediaType.Text	en-US	Text
-WC_MediaType.Text	de-DE	Text
+WC_MediaType.Text	de-DE	
 WC_MediaType.Video	hu-HU	Video
 WC_MediaType.Video	en-US	Video
-WC_MediaType.Video	de-DE	Video
+WC_MediaType.Video	de-DE	
 WC_MenuContent.AccountManagement	hu-HU	
 WC_MenuContent.AccountManagement	en-US	Account Management
-WC_MenuContent.AccountManagement	de-DE	Kontoführung
+WC_MenuContent.AccountManagement	de-DE	Account Management
 WC_MenuContent.AccountManagement.Roles	hu-HU	
 WC_MenuContent.AccountManagement.Roles	en-US	Roles
-WC_MenuContent.AccountManagement.Roles	de-DE	Rollen
+WC_MenuContent.AccountManagement.Roles	de-DE	Roles
 WC_MenuContent.AccountManagement.Users	hu-HU	
 WC_MenuContent.AccountManagement.Users	en-US	Users
 WC_MenuContent.AccountManagement.Users	de-DE	Users
 WC_MenuContent.Examination	hu-HU	Examination
 WC_MenuContent.Examination	en-US	Examination
-WC_MenuContent.Examination	de-DE	Prüfung
+WC_MenuContent.Examination	de-DE	Examination
 WC_MenuContent.Examination.BodyPartProperty	hu-HU	Body Part Property
 WC_MenuContent.Examination.BodyPartProperty	en-US	Body Part Property
-WC_MenuContent.Examination.BodyPartProperty	de-DE	Körperteil-Eigenschaft
+WC_MenuContent.Examination.BodyPartProperty	de-DE	Body Part Property
 WC_MenuContent.HardwareUpdates	hu-HU	Hardware Updates
 WC_MenuContent.HardwareUpdates	en-US	Hardware Updates
-WC_MenuContent.HardwareUpdates	de-DE	Hardware-Aktualisierungen
+WC_MenuContent.HardwareUpdates	de-DE	Hardware Updates
 WC_MenuContent.Hardwares	hu-HU	Hardwares
 WC_MenuContent.Hardwares	en-US	Hardwares
 WC_MenuContent.Hardwares	de-DE	Hardwares
@@ -195,31 +195,31 @@ WC_MenuContent.Home	en-US	Dashboard
 WC_MenuContent.Home	de-DE	Dashboard
 WC_MenuContent.License	hu-HU	License
 WC_MenuContent.License	en-US	License
-WC_MenuContent.License	de-DE	Lizenz
+WC_MenuContent.License	de-DE	License
 WC_MenuContent.MainData	hu-HU	
 WC_MenuContent.MainData	en-US	Main Data
 WC_MenuContent.MainData	de-DE	Main Data
 WC_MenuContent.Organizations	hu-HU	Organizations
 WC_MenuContent.Organizations	en-US	Organizations
-WC_MenuContent.Organizations	de-DE	Organisationen
+WC_MenuContent.Organizations	de-DE	Organizations
 WC_MenuContent.Organizations.RegisterOrganizations	hu-HU	Register Organizations
 WC_MenuContent.Organizations.RegisterOrganizations	en-US	Register Organizations
-WC_MenuContent.Organizations.RegisterOrganizations	de-DE	Organisationen registrieren
+WC_MenuContent.Organizations.RegisterOrganizations	de-DE	Register Organizations
 WC_MenuContent.Patients	hu-HU	Patients
 WC_MenuContent.Patients	en-US	Patients
 WC_MenuContent.Patients	de-DE	Patients
 WC_MenuContent.Setting	hu-HU	
 WC_MenuContent.Setting	en-US	Setting
-WC_MenuContent.Setting	de-DE	Einstellung
+WC_MenuContent.Setting	de-DE	Setting
 WC_PDF.Examination	hu-HU	
 WC_PDF.Examination	en-US	Examination type
-WC_PDF.Examination	de-DE	Art der Prüfung
+WC_PDF.Examination	de-DE	
 WC_PDF.ExaminationData	hu-HU	
 WC_PDF.ExaminationData	en-US	Examination data
-WC_PDF.ExaminationData	de-DE	Daten zur Prüfung
+WC_PDF.ExaminationData	de-DE	
 WC_PDF.PatientAge	hu-HU	
 WC_PDF.PatientAge	en-US	Patient age
-WC_PDF.PatientAge	de-DE	Patientenalter
+WC_PDF.PatientAge	de-DE	
 WC_PDF.PatientHeight	hu-HU	
 WC_PDF.PatientHeight	en-US	Patient height
 WC_PDF.PatientHeight	de-DE	
@@ -268,6 +268,9 @@ WC_UI_UWP_Common.Label.Insert	de-DE
 WC_UI_UWP_Common.Label.InvalidCpu	hu-HU	
 WC_UI_UWP_Common.Label.InvalidCpu	en-US	This device is not registered!
 WC_UI_UWP_Common.Label.InvalidCpu	de-DE	This device is not registered!
+WC_UI_UWP_Common.Label.LoginText	hu-HU	
+WC_UI_UWP_Common.Label.LoginText	en-US	Login
+WC_UI_UWP_Common.Label.LoginText	de-DE	
 WC_UI_UWP_Common.Label.Maximum	hu-HU	Maximum
 WC_UI_UWP_Common.Label.Maximum	en-US	Maximum
 WC_UI_UWP_Common.Label.Maximum	de-DE	Maximum
@@ -313,24 +316,15 @@ WC_UI_UWP_Login.Error.InvalidPassword	de-DE	Invalid password!
 WC_UI_UWP_Login.Error.InvalidUserName	hu-HU	
 WC_UI_UWP_Login.Error.InvalidUserName	en-US	Invalid user name!
 WC_UI_UWP_Login.Error.InvalidUserName	de-DE	Invalid user name!
-WC_UI_UWP_Login.Label.LoggedInUser	hu-HU	
-WC_UI_UWP_Login.Label.LoggedInUser	en-US	The logged in user:
-WC_UI_UWP_Login.Label.LoggedInUser	de-DE	The logged in user:
 WC_UI_UWP_Login.Label.LoginButton	hu-HU	
 WC_UI_UWP_Login.Label.LoginButton	en-US	Login
-WC_UI_UWP_Login.Label.LoginButton	de-DE	Login
+WC_UI_UWP_Login.Label.LoginButton	de-DE	
 WC_UI_UWP_Login.Label.LoginText	hu-HU	
 WC_UI_UWP_Login.Label.LoginText	en-US	Login
-WC_UI_UWP_Login.Label.LoginText	de-DE	Login
+WC_UI_UWP_Login.Label.LoginText	de-DE	
 WC_UI_UWP_Login.Label.Password	hu-HU	
 WC_UI_UWP_Login.Label.Password	en-US	Password
-WC_UI_UWP_Login.Label.Password	de-DE	Password
-WC_UI_UWP_Login.Label.Synchronization	hu-HU	
-WC_UI_UWP_Login.Label.Synchronization	en-US	Syncronization
-WC_UI_UWP_Login.Label.Synchronization	de-DE	Syncronization
-WC_UI_UWP_Login.Label.UserName	hu-HU	
-WC_UI_UWP_Login.Label.UserName	en-US	User name
-WC_UI_UWP_Login.Label.UserName	de-DE	User name
+WC_UI_UWP_Login.Label.Password	de-DE	
 WC_UI_UWP_Menu.Calibration	hu-HU	
 WC_UI_UWP_Menu.Calibration	en-US	Calibration
 WC_UI_UWP_Menu.Calibration	de-DE	
@@ -346,9 +340,6 @@ WC_UI_UWP_Menu.DiagnoseTooltip	de-DE	Page for editing the diagnose and share the
 WC_UI_UWP_Menu.ExaminationTooltip	hu-HU	
 WC_UI_UWP_Menu.ExaminationTooltip	en-US	You can start here the analysis and wait while processing
 WC_UI_UWP_Menu.ExaminationTooltip	de-DE	You can start here the analysis and wait while processing
-WC_UI_UWP_Menu.Hardware	hu-HU	
-WC_UI_UWP_Menu.Hardware	en-US	
-WC_UI_UWP_Menu.Hardware	de-DE	Hardware info
 WC_UI_UWP_Menu.HardwareTooltip	hu-HU	
 WC_UI_UWP_Menu.HardwareTooltip	en-US	Displays the information about connected devices
 WC_UI_UWP_Menu.HardwareTooltip	de-DE	Displays the information about connected devices
@@ -434,8 +425,8 @@ WC_UI_UWP_Pages.Calibration.ModeTooltip_Rect	hu-HU
 WC_UI_UWP_Pages.Calibration.ModeTooltip_Rect	en-US	Selection mode for defining bounding rectangle for body part sphere
 WC_UI_UWP_Pages.Calibration.ModeTooltip_Rect	de-DE	Selection mode for defining bounding rectangle for body part sphere
 WC_UI_UWP_Pages.Calibration.Name	hu-HU	
-WC_UI_UWP_Pages.Calibration.Name	en-US	Calibration name:
-WC_UI_UWP_Pages.Calibration.Name	de-DE	Calibration name:
+WC_UI_UWP_Pages.Calibration.Name	en-US	Calibration name: 
+WC_UI_UWP_Pages.Calibration.Name	de-DE	Calibration name: 
 WC_UI_UWP_Pages.Calibration.ReferenceButtonTooltip	hu-HU	
 WC_UI_UWP_Pages.Calibration.ReferenceButtonTooltip	en-US	Show/Hide reference lines
 WC_UI_UWP_Pages.Calibration.ReferenceButtonTooltip	de-DE	Show/Hide reference lines
@@ -452,8 +443,8 @@ WC_UI_UWP_Pages.Calibration.ToolTip	hu-HU
 WC_UI_UWP_Pages.Calibration.ToolTip	en-US	You can calibrate the cameras on this page
 WC_UI_UWP_Pages.Calibration.ToolTip	de-DE	You can calibrate the cameras on this page
 WC_UI_UWP_Pages.CalibrationItemControl.CalibrationStatusEnum_Current	hu-HU	
-WC_UI_UWP_Pages.CalibrationItemControl.CalibrationStatusEnum_Current	en-US	Current status:
-WC_UI_UWP_Pages.CalibrationItemControl.CalibrationStatusEnum_Current	de-DE	Current status:
+WC_UI_UWP_Pages.CalibrationItemControl.CalibrationStatusEnum_Current	en-US	Current status: 
+WC_UI_UWP_Pages.CalibrationItemControl.CalibrationStatusEnum_Current	de-DE	Current status: 
 WC_UI_UWP_Pages.CalibrationItemControl.CalibrationStatusEnum_Invalid	hu-HU	
 WC_UI_UWP_Pages.CalibrationItemControl.CalibrationStatusEnum_Invalid	en-US	The selected body point from this direction is not calibrated yet!
 WC_UI_UWP_Pages.CalibrationItemControl.CalibrationStatusEnum_Invalid	de-DE	The selected body point from this direction is not calibrated yet!
@@ -482,8 +473,8 @@ WC_UI_UWP_Pages.CalibrationItemControl.PercentTooltip	hu-HU
 WC_UI_UWP_Pages.CalibrationItemControl.PercentTooltip	en-US	The founded rate of sphere belongs to the selected body point and direction
 WC_UI_UWP_Pages.CalibrationItemControl.PercentTooltip	de-DE	The founded rate of sphere belongs to the selected body point and direction
 WC_UI_UWP_Pages.CalibrationItemControl.RectangleStatusEnum_Current	hu-HU	
-WC_UI_UWP_Pages.CalibrationItemControl.RectangleStatusEnum_Current	en-US	Current status:
-WC_UI_UWP_Pages.CalibrationItemControl.RectangleStatusEnum_Current	de-DE	Current status:
+WC_UI_UWP_Pages.CalibrationItemControl.RectangleStatusEnum_Current	en-US	Current status: 
+WC_UI_UWP_Pages.CalibrationItemControl.RectangleStatusEnum_Current	de-DE	Current status: 
 WC_UI_UWP_Pages.CalibrationItemControl.RectangleStatusEnum_Defined	hu-HU	
 WC_UI_UWP_Pages.CalibrationItemControl.RectangleStatusEnum_Defined	en-US	The bounding rectangle of the selected body point and direction is set.
 WC_UI_UWP_Pages.CalibrationItemControl.RectangleStatusEnum_Defined	de-DE	The bounding rectangle of the selected body point and direction is set.
@@ -566,11 +557,11 @@ WC_UI_UWP_Pages.DiameterDialog.InvalidMinimumValue	hu-HU
 WC_UI_UWP_Pages.DiameterDialog.InvalidMinimumValue	en-US	The minimum diameter factor is invalid!
 WC_UI_UWP_Pages.DiameterDialog.InvalidMinimumValue	de-DE	The minimum diameter factor is invalid!
 WC_UI_UWP_Pages.DiameterDialog.MaxDiameter	hu-HU	
-WC_UI_UWP_Pages.DiameterDialog.MaxDiameter	en-US	Maximum diameter factor:
-WC_UI_UWP_Pages.DiameterDialog.MaxDiameter	de-DE	Maximum diameter factor:
+WC_UI_UWP_Pages.DiameterDialog.MaxDiameter	en-US	Maximum diameter factor: 
+WC_UI_UWP_Pages.DiameterDialog.MaxDiameter	de-DE	Maximum diameter factor: 
 WC_UI_UWP_Pages.DiameterDialog.MinDiameter	hu-HU	
-WC_UI_UWP_Pages.DiameterDialog.MinDiameter	en-US	Minimum diameter factor:
-WC_UI_UWP_Pages.DiameterDialog.MinDiameter	de-DE	Minimum diameter factor:
+WC_UI_UWP_Pages.DiameterDialog.MinDiameter	en-US	Minimum diameter factor: 
+WC_UI_UWP_Pages.DiameterDialog.MinDiameter	de-DE	Minimum diameter factor: 
 WC_UI_UWP_Pages.DiameterDialog.MinMaxOrderError	hu-HU	
 WC_UI_UWP_Pages.DiameterDialog.MinMaxOrderError	en-US	The maximum diameter factor must be bigger than the minimum value!
 WC_UI_UWP_Pages.DiameterDialog.MinMaxOrderError	de-DE	The maximum diameter factor must be bigger than the minimum value!
@@ -614,17 +605,20 @@ WC_UI_UWP_Pages.Examination.InsoleRecordError	hu-HU
 WC_UI_UWP_Pages.Examination.InsoleRecordError	en-US	There was an error on the insole on starting recording
 WC_UI_UWP_Pages.Examination.InsoleRecordError	de-DE	There was an error on the insole on starting recording
 WC_UI_UWP_Pages.Examination.Label.Calibration	hu-HU	
-WC_UI_UWP_Pages.Examination.Label.Calibration	en-US	Selected calibration:
-WC_UI_UWP_Pages.Examination.Label.Calibration	de-DE	Selected calibration:
+WC_UI_UWP_Pages.Examination.Label.Calibration	en-US	Selected calibration: 
+WC_UI_UWP_Pages.Examination.Label.Calibration	de-DE	Selected calibration: 
 WC_UI_UWP_Pages.Examination.Label.Error	hu-HU	
-WC_UI_UWP_Pages.Examination.Label.Error	en-US	Errors:
-WC_UI_UWP_Pages.Examination.Label.Error	de-DE	Errors:
+WC_UI_UWP_Pages.Examination.Label.Error	en-US	Errors: 
+WC_UI_UWP_Pages.Examination.Label.Error	de-DE	Errors: 
 WC_UI_UWP_Pages.Examination.Label.ExaminationType	hu-HU	
-WC_UI_UWP_Pages.Examination.Label.ExaminationType	en-US	Selected examination type:
-WC_UI_UWP_Pages.Examination.Label.ExaminationType	de-DE	Selected examination type:
+WC_UI_UWP_Pages.Examination.Label.ExaminationType	en-US	Selected examination type: 
+WC_UI_UWP_Pages.Examination.Label.ExaminationType	de-DE	Selected examination type: 
 WC_UI_UWP_Pages.Examination.Label.Patient	hu-HU	
-WC_UI_UWP_Pages.Examination.Label.Patient	en-US	Selected patient:
-WC_UI_UWP_Pages.Examination.Label.Patient	de-DE	Selected patient:
+WC_UI_UWP_Pages.Examination.Label.Patient	en-US	Selected patient: 
+WC_UI_UWP_Pages.Examination.Label.Patient	de-DE	Selected patient: 
+WC_UI_UWP_Pages.Examination.Label.Threadmill	hu-HU	
+WC_UI_UWP_Pages.Examination.Label.Threadmill	en-US	Treadmill
+WC_UI_UWP_Pages.Examination.Label.Threadmill	de-DE	
 WC_UI_UWP_Pages.Examination.Lead	hu-HU	
 WC_UI_UWP_Pages.Examination.Lead	en-US	Pressing the button you can start the analysis.
 WC_UI_UWP_Pages.Examination.Lead	de-DE	Pressing the button you can start the analysis.
@@ -662,11 +656,11 @@ WC_UI_UWP_Pages.HardwareInfo.AssignedHardware	hu-HU
 WC_UI_UWP_Pages.HardwareInfo.AssignedHardware	en-US	The associated device:
 WC_UI_UWP_Pages.HardwareInfo.AssignedHardware	de-DE	The associated device:
 WC_UI_UWP_Pages.HardwareInfo.DirectionLabel	hu-HU	
-WC_UI_UWP_Pages.HardwareInfo.DirectionLabel	en-US	Direction:
-WC_UI_UWP_Pages.HardwareInfo.DirectionLabel	de-DE	Direction:
+WC_UI_UWP_Pages.HardwareInfo.DirectionLabel	en-US	Direction: 
+WC_UI_UWP_Pages.HardwareInfo.DirectionLabel	de-DE	Direction: 
 WC_UI_UWP_Pages.HardwareInfo.LastOnlineLabel	hu-HU	
-WC_UI_UWP_Pages.HardwareInfo.LastOnlineLabel	en-US	Last online:
-WC_UI_UWP_Pages.HardwareInfo.LastOnlineLabel	de-DE	Last online:
+WC_UI_UWP_Pages.HardwareInfo.LastOnlineLabel	en-US	Last online: 
+WC_UI_UWP_Pages.HardwareInfo.LastOnlineLabel	de-DE	Last online: 
 WC_UI_UWP_Pages.HardwareInfo.Lead	hu-HU	
 WC_UI_UWP_Pages.HardwareInfo.Lead	en-US	You can check and set the status of the connected devices.
 WC_UI_UWP_Pages.HardwareInfo.Lead	de-DE	You can check and set the status of the connected devices.
@@ -761,7 +755,7 @@ WC_UI_UWP_Pages.Patient.Address	hu-HU
 WC_UI_UWP_Pages.Patient.Address	en-US	Address
 WC_UI_UWP_Pages.Patient.Address	de-DE	
 WC_UI_UWP_Pages.Patient.Born	hu-HU	
-WC_UI_UWP_Pages.Patient.Born	en-US	Born:
+WC_UI_UWP_Pages.Patient.Born	en-US	Born: 
 WC_UI_UWP_Pages.Patient.Born	de-DE	Born:
 WC_UI_UWP_Pages.Patient.Comments	hu-HU	
 WC_UI_UWP_Pages.Patient.Comments	en-US	Comments
@@ -778,9 +772,9 @@ WC_UI_UWP_Pages.Patient.Height	de-DE
 WC_UI_UWP_Pages.Patient.LeftFootSize	hu-HU	
 WC_UI_UWP_Pages.Patient.LeftFootSize	en-US	Left foot size
 WC_UI_UWP_Pages.Patient.LeftFootSize	de-DE	Left foot size
-WC_UI_UWP_Pages.Patient.ListCount	hu-HU	A listában lévő betegek száma:
-WC_UI_UWP_Pages.Patient.ListCount	en-US	A listában lévő betegek száma:
-WC_UI_UWP_Pages.Patient.ListCount	de-DE	A listában lévő betegek száma:
+WC_UI_UWP_Pages.Patient.ListCount	hu-HU	A listában lévő betegek száma: 
+WC_UI_UWP_Pages.Patient.ListCount	en-US	A listában lévő betegek száma: 
+WC_UI_UWP_Pages.Patient.ListCount	de-DE	A listában lévő betegek száma: 
 WC_UI_UWP_Pages.Patient.Name	hu-HU	
 WC_UI_UWP_Pages.Patient.Name	en-US	Name
 WC_UI_UWP_Pages.Patient.Name	de-DE	Name
@@ -794,8 +788,8 @@ WC_UI_UWP_Pages.Patient.RootOrganizationId	hu-HU
 WC_UI_UWP_Pages.Patient.RootOrganizationId	en-US	Organization
 WC_UI_UWP_Pages.Patient.RootOrganizationId	de-DE	
 WC_UI_UWP_Pages.Patient.SelectionLog	hu-HU	
-WC_UI_UWP_Pages.Patient.SelectionLog	en-US	Selected patient for analysis:
-WC_UI_UWP_Pages.Patient.SelectionLog	de-DE	Selected patient for analysis:
+WC_UI_UWP_Pages.Patient.SelectionLog	en-US	Selected patient for analysis: 
+WC_UI_UWP_Pages.Patient.SelectionLog	de-DE	Selected patient for analysis: 
 WC_UI_UWP_Pages.Patient.Undefined	hu-HU	
 WC_UI_UWP_Pages.Patient.Undefined	en-US	Not specified
 WC_UI_UWP_Pages.Patient.Undefined	de-DE	Not specified
@@ -811,12 +805,18 @@ WC_UI_UWP_Pages.Preparation.ExaminationTypeUnnecessaryDevice	de-DE	The device is
 WC_UI_UWP_Pages.Preparation.NoCalibration	hu-HU	
 WC_UI_UWP_Pages.Preparation.NoCalibration	en-US	There is no calibration data in the system, please create one!
 WC_UI_UWP_Pages.Preparation.NoCalibration	de-DE	There is no calibration data in the system, please create one!
+WC_UI_UWP_Pages.Preparation.OnlineLoggers	hu-HU	
+WC_UI_UWP_Pages.Preparation.OnlineLoggers	en-US	Loggers
+WC_UI_UWP_Pages.Preparation.OnlineLoggers	de-DE	Loggers
 WC_UI_UWP_Pages.Preparation.SyncExaminations	hu-HU	
 WC_UI_UWP_Pages.Preparation.SyncExaminations	en-US	Sync examinations
 WC_UI_UWP_Pages.Preparation.SyncExaminations	de-DE	Sync examinations
 WC_UI_UWP_Pages.Preparation.Title	hu-HU	
 WC_UI_UWP_Pages.Preparation.Title	en-US	Preparation
 WC_UI_UWP_Pages.Preparation.Title	de-DE	
+WC_UI_UWP_Pages.Preparation.UnknownInsole	hu-HU	
+WC_UI_UWP_Pages.Preparation.UnknownInsole	en-US	Unknown logger
+WC_UI_UWP_Pages.Preparation.UnknownInsole	de-DE	Unknown logger
 WC_UI_UWP_Pages.Results.AddSnapshotButtonTooltip	hu-HU	
 WC_UI_UWP_Pages.Results.AddSnapshotButtonTooltip	en-US	Crates a new marker in the specified position
 WC_UI_UWP_Pages.Results.AddSnapshotButtonTooltip	de-DE	Crates a new marker in the specified position

@@ -65,6 +65,8 @@ void MainWindow::set_MessageEditor(const MainViewModel::ListItemChangedModelR& m
     ui->lineEdit_de->setText(m.wcode.tr_de);
     ui->lineEdit_en->setText(m.wcode.tr_en);
     ui->lineEdit_hu->setText(m.wcode.tr_hu);
+    QString msg = m.wcode.isUsed?(m.wcode.fileName+" ("+QString::number(m.wcode.lineNumber)+")"):"not used";
+    ui->label_using->setText(msg);
 }
 
 void MainWindow::set_RogzitStatus(bool isOk)

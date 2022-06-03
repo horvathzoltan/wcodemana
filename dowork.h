@@ -17,6 +17,7 @@ public:
     public:
         QString inFile;
         QString outFile;
+        QString uwcFile;
         bool isBackup;
         bool isTest = false;
 

@@ -127,5 +127,6 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 DISTFILES += \
+    testdata/Translations_202206031312.csv \
     testdata/todo.txt \
     testdata/wcodes.txt

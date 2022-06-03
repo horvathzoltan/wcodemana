@@ -12,6 +12,10 @@ public:
     QString tr_en;
     QString tr_de;
 
+    QString fileName="";
+    int lineNumber=-1;
+    bool isUsed=false;
+
     static QMap<QString,Wcode> FromCSV(const QStringList& wcodes);
     void UpdateMessage(const QString& lang, const QString& msg);
     static QStringList ToCSV(const QMap<QString, Wcode> &wcodes);
@@ -20,6 +24,7 @@ public:
     static QStringList ToCode(const QMap<QString, Wcode> &wcodes);
 
     bool isValid(){ return !wcode.isEmpty();}
+    static void AssertByUsing(QMap<QString, Wcode>* wcodes, const QStringList& used);
 };
 
 #endif // WCODE_H
