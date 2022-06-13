@@ -32,9 +32,27 @@ void MainWindow::set_DoWorkRModel(const MainViewModel::DoWorkRModel& m)
     ui->lineEdit_de->clear();
     ui->listWidget->clear();
 
+    QIcon icon = QApplication::style()->standardIcon(QStyle::SP_DialogOkButton);
+
     auto keys = m.wcodes.keys();
-    ui->listWidget->addItems(keys);
+    //ui->listWidget->addItems(keys);
+    for(auto&k:keys){
+        auto i = new QListWidgetItem(ui->listWidget, 0);
+        i->setText(k);
+        auto a = m.wcodes[k];
+        if(a.isUsed){
+            if(a.isInDb) i->setBackground(Qt::green);
+            else i->setBackground(Qt::yellow);
+        }
+
+        if(a.isWcodeOk()) i->setIcon(icon);
+        //i->setIcon()
+        //ui->listWidget->addItem(&i);
+    }
+
 };
+
+
 
 auto MainWindow::get_DoWorkModel() -> MainViewModel::DoWorkModel
 {
@@ -59,6 +77,21 @@ auto MainWindow::get_SelectedWcode() -> MainViewModel::ListItemChangedModel
     return {t->text()};
 };
 
+
+auto MainWindow::get_EnText() -> MainViewModel::TextModel
+{
+    auto t = ui->lineEdit_en->text();
+    if(t.isEmpty()) return{};
+    return {t};
+};
+
+auto MainWindow::get_HuText() -> MainViewModel::TextModel
+{
+    auto t = ui->lineEdit_hu->text();
+    if(t.isEmpty()) return{};
+    return {t};
+};
+
 void MainWindow::set_MessageEditor(const MainViewModel::ListItemChangedModelR& m)
 {
     ui->label_wcode->setText(m.wcode.wcode);
@@ -69,11 +102,17 @@ void MainWindow::set_MessageEditor(const MainViewModel::ListItemChangedModelR& m
     ui->label_using->setText(msg);
 }
 
-void MainWindow::set_RogzitStatus(bool isOk)
+void MainWindow::set_RogzitStatus(MainViewModel::RogzitStatusR m)
 {
-    ShowStatusMsg(QStringLiteral("Rögzítés ")+(isOk?"ok":"error"));
+    ShowStatusMsg(QStringLiteral("Rögzítés ")+(m.isOk?"ok":"error"));
     AppendCodeEditor("code");
-    //plainTextEdit
+    auto items = ui->listWidget->findItems(m.wcode.wcode, Qt::MatchFlag::MatchExactly);
+    if(items.isEmpty()) return;
+    auto item = items.first();
+
+    auto isOk = m.wcode.isWcodeOk();
+
+    if(isOk) item->setIcon(QApplication::style()->standardIcon(QStyle::SP_DialogOkButton)); else item->setIcon({});
 }
 
 void MainWindow::set_SaveStatus(bool isOk)
@@ -100,9 +139,9 @@ MainViewModel::ListItemChangedModelR MainWindow::get_MessageEditor()
 
 void MainWindow::on_listWidget_itemClicked(QListWidgetItem *item)
 {
-    qDebug() << "ListItemChanged";
+    //qDebug() << "ListItemClicked";
     //emit RogzitTriggered(this);
-    emit ListItemChangedTriggered(this);
+    //emit ListItemChangedTriggered(this);
 }
 
 
@@ -206,5 +245,13 @@ void MainWindow::on_pushButton_hu_to_en_clicked()
 {
     qDebug() << "HuToEnClicked";
     emit HuToEnTriggered(this);
+}
+
+
+void MainWindow::on_listWidget_currentItemChanged(QListWidgetItem *current, QListWidgetItem *previous)
+{
+    qDebug() << "ListItemCurrentItemChanged";
+    //emit RogzitTriggered(this);
+    emit ListItemChangedTriggered(this);
 }
 

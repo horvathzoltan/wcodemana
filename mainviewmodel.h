@@ -31,6 +31,15 @@ public:
     struct GenerateR{
         QString code;
     };
+
+    struct TextModel{
+        QString text;
+    };
+
+    struct RogzitStatusR{
+        Wcode wcode;
+        bool isOk;
+    };
 };
 
 

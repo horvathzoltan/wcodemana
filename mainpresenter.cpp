@@ -93,8 +93,11 @@ void MainPresenter::RogzitAction(IMainView *sender)
 {
     qDebug() << "RogzitAction";
     auto m = sender->get_MessageEditor();
-    bool isOk = _w.SetSelected(m);
-    sender->set_RogzitStatus(isOk);
+    MainViewModel::RogzitStatusR r;
+    r.isOk = _w.SetSelected(m);
+    r.wcode = m.wcode;
+
+    sender->set_RogzitStatus(r);
 }
 
 void MainPresenter::SaveAction(IMainView *sender)
@@ -126,12 +129,12 @@ void MainPresenter::GenerateAction(IMainView *sender)
 void MainPresenter::EnToDeAction(IMainView *sender)
 {
     qDebug() << "EnToDeAction";
-    auto m = sender->get_SelectedWcode();
-    auto m2 = _w.GetSelected(m);
-    if(!m2.wcode.isValid()) return;
+    auto m = sender->get_EnText();
+//    auto m2 = _w.GetSelected(m);
+//    if(!m2.wcode.isValid()) return;
     _enToDeActionSender = sender;
     _dest_lang = "de";
-    QString msg_de = _w.DeepLTranslate("en", "de", m2.wcode.tr_en);
+    QString msg_de = _w.DeepLTranslate("en", "de", m.text);
 }
 
 void MainPresenter::onResponseOkAction2(QString msg_de)
@@ -151,10 +154,10 @@ void MainPresenter::onResponseOkAction2(QString msg_de)
 void MainPresenter::HuToEnAction(IMainView *sender)
 {
     qDebug() << "HuToEnAction";
-    auto m = sender->get_SelectedWcode();
-    auto m2 = _w.GetSelected(m);
-    if(!m2.wcode.isValid()) return;
+    auto m = sender->get_HuText();
+    //auto m2 = _w.GetSelected(m);
+    //if(!m2.wcode.isValid()) return;
     _enToDeActionSender = sender;
     _dest_lang = "en";
-    QString msg_de = _w.DeepLTranslate("hu", "en", m2.wcode.tr_hu);
+    QString msg_de = _w.DeepLTranslate("hu", "en", m.text);
 }

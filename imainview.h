@@ -15,9 +15,12 @@ public:
     virtual MainViewModel::DoWorkModel get_DoWorkModel() =0;
 
     virtual MainViewModel::ListItemChangedModel get_SelectedWcode() = 0;
+    virtual MainViewModel::TextModel get_EnText() = 0;
+    virtual MainViewModel::TextModel get_HuText() = 0;
+
     virtual void set_MessageEditor(const MainViewModel::ListItemChangedModelR &m) = 0;
     virtual MainViewModel::ListItemChangedModelR get_MessageEditor() = 0;
-    virtual void set_RogzitStatus(bool isOk) = 0;
+    virtual void set_RogzitStatus(MainViewModel::RogzitStatusR m) = 0;
     virtual void set_SaveStatus(bool isOk) = 0;
     virtual void set_SaveToCodeStatus(bool isOk) = 0;       
     virtual void set_GenerateResult(const MainViewModel::GenerateR& m) = 0;    

@@ -30,9 +30,12 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
     MainViewModel::ListItemChangedModel get_SelectedWcode();
+    MainViewModel::TextModel get_EnText();
+    MainViewModel::TextModel get_HuText();
+
     void set_MessageEditor(const MainViewModel::ListItemChangedModelR &m);
     MainViewModel::ListItemChangedModelR get_MessageEditor();
-    void set_RogzitStatus(bool isOk);
+    void set_RogzitStatus(MainViewModel::RogzitStatusR m);
     void set_SaveStatus(bool isOk);
     void set_SaveToCodeStatus(bool isOk);
     void closeEvent(QCloseEvent *event);
@@ -40,6 +43,7 @@ public:
     void set_EnToDeResult(const MainViewModel::GenerateR &m);
     void set_HuToEnResult(const MainViewModel::GenerateR &m);
 
+    static bool isWcodeOk(Wcode *m);
 signals:
     void PushButtonActionTriggered(IMainView *sender);
     void ListItemChangedTriggered(IMainView *sender);
@@ -62,5 +66,6 @@ private slots:
     void on_pushButton_copytoclipboard_clicked();
     void on_pushButton_en_to_de_clicked();
     void on_pushButton_hu_to_en_clicked();
+    void on_listWidget_currentItemChanged(QListWidgetItem *current, QListWidgetItem *previous);
 };
 #endif // MAINWINDOW_H

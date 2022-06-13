@@ -28,6 +28,7 @@ QMap<QString, Wcode> Wcode::FromCSV(const QStringList &wcodes)
             Wcode wcode;
             wcode.wcode=wc;
             wcode.UpdateMessage(lang,msg);
+            wcode.isInDb=true;
             m.insert(wc, wcode);
         }
     }
@@ -106,15 +107,19 @@ void Wcode::AssertByUsing(QMap<QString, Wcode>* wcodes, const QStringList& used)
                     int lineNumber = ln.toInt(&ok);
                     QString wc = u.mid(ix2+1, ix3-ix2-1);
                     if(ok){
+                        // ha tartalmazza, azaz használva van, megmondjuk, hogy hol
                         if(wcodes->contains(wc)){
                             Wcode *w = &(*wcodes)[wc];
                             w->isUsed=true;
                             w->fileName = lastFilePath;
                             w->lineNumber = lineNumber;
-                        }else{
+                        }
+                        //amúgy hozzá kell adni, mint nem tartalmazott, de használt wcodeot
+                        else{
                             Wcode w;
                             w.wcode=wc;
                             w.isUsed = true;
+                            w.isInDb = false;
                             w.fileName = lastFilePath;
                             w.lineNumber = lineNumber;
                             wcodes->insert(wc, w);
@@ -124,4 +129,15 @@ void Wcode::AssertByUsing(QMap<QString, Wcode>* wcodes, const QStringList& used)
             }
         }
     }
+}
+
+bool Wcode::isWcodeOk(){
+    if(tr_hu.isEmpty()) return false;
+    if(tr_en.isEmpty()) return false;
+    if(tr_de.isEmpty()) return false;
+
+    if(tr_hu==tr_en) return false;
+    if(tr_hu==tr_de) return false;
+    if(tr_en==tr_de) return false;
+    return true;
 }
