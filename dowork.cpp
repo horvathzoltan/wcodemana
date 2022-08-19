@@ -223,22 +223,49 @@ void DoWork::ResponseOkAction(QByteArray s){
 
 
 const QString DoWork::COMORSTR = R"(GlobalTranslation.Translate\((\"([^"\\]*(?:\\.[^"\\]*)*)\"|\@\"((?:[^\"]|(?:\"\"))*)\")|([\s]*(?:\/\*([\s\S]*?)\*\/|\/\/(.*))))";
+const QString DoWork::COMORSTR2 = R"(GlobalTranslation.Translate\(((?!new\s)[^\)]+)\))";
 
 
 QString DoWork::ReplaceTr(const QString& msg){
     QRegularExpression reg(COMORSTR);
-    QString r;
+    QString r(msg);
 
-    QRegularExpressionMatchIterator i = reg.globalMatch(msg);
-    while(i.hasNext()){
-        QRegularExpressionMatch match = i.next();
-        if(match.hasMatch()){
-            auto index = match.capturedStart(0);
-            auto length = match.capturedLength(0);
+    bool ok;
+    do{
+        QString s(r);
+        QRegularExpressionMatchIterator i = reg.globalMatch(s);
+        ok = false;
+        while(i.hasNext()){
+            ok = true;
+            QRegularExpressionMatch match = i.next();
+            if(match.hasMatch()){
+                auto index = match.capturedStart(0);
+                auto length = match.capturedLength(0);
 
-            QString newstring = "GlobalTranslation.Translate<W."+match.captured(2)+">(";
-            r = msg.left(index)+newstring+msg.mid(index+length);
+                QString newstring = "GlobalTranslation.Translate<W."+match.captured(2)+">(";
+                r = s.left(index)+newstring+s.mid(index+length);
+            }
         }
-    }
+    }while(ok);
+
+    QRegularExpression reg2(COMORSTR2);
+    do{
+        QString s(r);
+        QRegularExpressionMatchIterator i = reg2.globalMatch(s);
+        ok = false;
+        while(i.hasNext()){
+            ok = true;
+            QRegularExpressionMatch match = i.next();
+            if(match.hasMatch()){
+                auto index = match.capturedStart(0);
+                auto length = match.capturedLength(0);
+                if(match.capturedLength(1) == 0) continue;
+
+                QString newstring = "GlobalTranslation.Translate(new WordCodeMessage("+match.captured(1)+"))";
+                r = s.left(index)+newstring+s.mid(index+length);
+            }
+        }
+    }while(ok);
+
     return r;
 }

@@ -14,6 +14,7 @@ public:
     explicit DoWork(QObject *parent = nullptr);
 
     static const QString COMORSTR;
+    static const QString COMORSTR2;
 
     struct Params{
     public:
