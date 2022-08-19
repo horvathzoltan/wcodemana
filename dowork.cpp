@@ -220,3 +220,25 @@ void DoWork::ResponseOkAction(QByteArray s){
 
     emit ResponseOkAction2(translation);
 }
+
+
+const QString DoWork::COMORSTR = R"(GlobalTranslation.Translate\((\"([^"\\]*(?:\\.[^"\\]*)*)\"|\@\"((?:[^\"]|(?:\"\"))*)\")|([\s]*(?:\/\*([\s\S]*?)\*\/|\/\/(.*))))";
+
+
+QString DoWork::ReplaceTr(const QString& msg){
+    QRegularExpression reg(COMORSTR);
+    QString r;
+
+    QRegularExpressionMatchIterator i = reg.globalMatch(msg);
+    while(i.hasNext()){
+        QRegularExpressionMatch match = i.next();
+        if(match.hasMatch()){
+            auto index = match.capturedStart(0);
+            auto length = match.capturedLength(0);
+
+            QString newstring = "GlobalTranslation.Translate<W."+match.captured(2)+">(";
+            r = msg.left(index)+newstring+msg.mid(index+length);
+        }
+    }
+    return r;
+}

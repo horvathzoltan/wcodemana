@@ -30,12 +30,16 @@ public:
     virtual void GenerateTriggered(IMainView *sender) = 0;
     virtual void EnToDeTriggered(IMainView *sender) = 0;
     virtual void HuToEnTriggered(IMainView *sender) = 0;
+    virtual MainViewModel::TextModel get_GenerateTr() =0;
+    virtual void set_GenerateTr(const MainViewModel::GenerateTrR &m)=0;
+
 public: // signals
     virtual void PushButtonActionTriggered(IMainView *sender) = 0;
     virtual void ListItemChangedTriggered(IMainView *sender) = 0;
     virtual void RogzitTriggered(IMainView *sender) = 0;
     virtual void SaveTriggered(IMainView *sender) = 0;
     virtual void SaveToCodeTriggered(IMainView *sender) =0;
+    virtual void GenerateTrTriggered(IMainView *sender) =0;
 };
 
 #endif // IMAINVIEW_H

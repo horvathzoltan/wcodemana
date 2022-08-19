@@ -42,8 +42,10 @@ public:
     void set_GenerateResult(const MainViewModel::GenerateR& m);
     void set_EnToDeResult(const MainViewModel::GenerateR &m);
     void set_HuToEnResult(const MainViewModel::GenerateR &m);
-
     static bool isWcodeOk(Wcode *m);
+
+    MainViewModel::TextModel get_GenerateTr();
+    void set_GenerateTr(const MainViewModel::GenerateTrR &m);
 signals:
     void PushButtonActionTriggered(IMainView *sender);
     void ListItemChangedTriggered(IMainView *sender);
@@ -53,6 +55,7 @@ signals:
     void GenerateTriggered(IMainView *sender);
     void EnToDeTriggered(IMainView *sender);
     void HuToEnTriggered(IMainView *sender);
+    void GenerateTrTriggered(IMainView *sender);
 
 private slots:    
     void on_pushButton_clicked();
@@ -67,5 +70,6 @@ private slots:
     void on_pushButton_en_to_de_clicked();
     void on_pushButton_hu_to_en_clicked();
     void on_listWidget_currentItemChanged(QListWidgetItem *current, QListWidgetItem *previous);
+    void on_pushButton_GenerateTr_clicked();
 };
 #endif // MAINWINDOW_H

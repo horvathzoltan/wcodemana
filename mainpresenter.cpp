@@ -45,6 +45,9 @@ void MainPresenter::appendView(IMainView *w)
 
     QObject::connect(view_obj, SIGNAL(HuToEnTriggered(IMainView *)),
                      this, SLOT(HuToEnAction(IMainView *)));
+
+    QObject::connect(view_obj, SIGNAL(GenerateTrTriggered(IMainView *)),
+                     this, SLOT(GenerateTrAction(IMainView *)));
     //refreshView(w);
 }
 
@@ -160,4 +163,15 @@ void MainPresenter::HuToEnAction(IMainView *sender)
     _enToDeActionSender = sender;
     _dest_lang = "en";
     QString msg_de = _w.DeepLTranslate("hu", "en", m.text);
+}
+
+
+void MainPresenter::GenerateTrAction(IMainView *sender)
+{
+    qDebug() << "HuToEnAction";
+    auto m = sender->get_GenerateTr();
+
+    QString a = _w.ReplaceTr(m.text);
+
+    sender->set_GenerateTr({a});
 }

@@ -40,6 +40,10 @@ public:
         Wcode wcode;
         bool isOk;
     };
+
+    struct GenerateTrR{
+        QString msg;
+    };
 };
 
 

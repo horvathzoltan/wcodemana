@@ -220,6 +220,17 @@ void MainWindow::set_HuToEnResult(const MainViewModel::GenerateR& m)
     if(!m.code.isEmpty()) ui->lineEdit_en->setText(m.code);
 }
 
+MainViewModel::TextModel MainWindow::get_GenerateTr()
+{
+    return {ui->lineEdit_generateTr->text()};
+}
+
+void MainWindow::set_GenerateTr(const MainViewModel::GenerateTrR &m)
+{
+    AppendCodeEditor(m.msg);
+    _clipboard->setText(m.msg);
+}
+
 
 void MainWindow::AppendCodeEditor(QString msg)
 {
@@ -253,5 +264,11 @@ void MainWindow::on_listWidget_currentItemChanged(QListWidgetItem *current, QLis
     qDebug() << "ListItemCurrentItemChanged";
     //emit RogzitTriggered(this);
     emit ListItemChangedTriggered(this);
+}
+
+
+void MainWindow::on_pushButton_GenerateTr_clicked()
+{
+    emit GenerateTrTriggered(this);
 }
 

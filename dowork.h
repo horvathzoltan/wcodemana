@@ -13,6 +13,8 @@ class DoWork: public QObject
 public:
     explicit DoWork(QObject *parent = nullptr);
 
+    static const QString COMORSTR;
+
     struct Params{
     public:
         QString inFile;
@@ -45,6 +47,7 @@ public:
 
     QString DeepLTranslate(const QString& source_lang, const QString& dest_lang, const QString& msg);
 
+    QString ReplaceTr(const QString &msg);
 private:
     bool _isInited = false;
     bool _isEventLoopNeeded = false;
